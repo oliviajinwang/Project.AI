@@ -1,0 +1,10 @@
+# Python virtual environments
+.venv/
+venv/
+ENV/
+
+# Streamlit local configs
+.streamlit/
+
+# Mac system junk files
+.DS_Store
