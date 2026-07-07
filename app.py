@@ -1,7 +1,7 @@
 import streamlit as st
 
-from utils.db import init_db
-from utils.layout import inject_css
+from utils.db import init_db  # stores patient data(patient history)
+from utils.layout import inject_css  #colors/design
 
 st.set_page_config(
     page_title="BrainGuard AI",
@@ -10,8 +10,8 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-init_db()
-inject_css()
+init_db()  # creates database.db here if it doesn't exist yet
+inject_css()  # applies the CSS design to the page
 
 st.session_state.setdefault("role", None)
 st.session_state.setdefault("clinic_authenticated", False)
