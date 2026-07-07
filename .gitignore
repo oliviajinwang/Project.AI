@@ -2,9 +2,17 @@
 .venv/
 venv/
 ENV/
+__pycache__/
 
 # Streamlit local configs
 .streamlit/
 
 # Mac system junk files
 .DS_Store
+
+# Data
+*.db
+data/
+
+# Models
+models/*.pkl
