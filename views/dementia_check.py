@@ -2,7 +2,6 @@ import streamlit as st
 
 from utils.db import display_id, fetch_all_patients, update_assessment
 from utils.gauge import render_risk_gauge
-# from utils.mock_predict import get_mock_prediction
 from utils.report import RECOMMENDATIONS
 from src.predict import predict_patient
 
@@ -13,7 +12,9 @@ CLASS_COLORS = {"Nondemented": COLOR_GOOD, "Converted": COLOR_WARNING, "Demented
 
 st.markdown("<div class='bg-section'>🧠 Dementia Check</div>", unsafe_allow_html=True)
 st.write("Run an AI-assisted dementia risk assessment using lifestyle or clinical data.")
-st.caption("Predictions shown here are placeholder values until the trained model is connected.")
+st.caption(
+    "AI-assisted dementia risk estimation based on clinical and MRI-derived features."
+)
 
 patients_df = fetch_all_patients()
 patient_options = {"— Quick assessment (not saved) —": None}
@@ -41,20 +42,6 @@ with tab_lifestyle:
 
     if st.button("Run Lifestyle Assessment", type="primary", key="run_lifestyle"):
         st.info("Lifestyle AI model coming soon.")
-        # prediction = predict_patient(patient)
-
-        # st.session_state["clinical_result"] = prediction
-        # st.session_state["lifestyle_result"] = {
-        #     "label": label,
-        #     "confidence": confidence,
-        #     "fields": {
-        #         "education_years": ls_education,
-        #         "diabetes": int(ls_diabetes),
-        #         "hypertension": int(ls_hypertension),
-        #         "high_cholesterol": int(ls_cholesterol),
-        #         "smoking": int(ls_smoking),
-        #     },
-        # }
 
     if "lifestyle_result" in st.session_state:
         result = st.session_state["lifestyle_result"]
@@ -134,7 +121,11 @@ with tab_clinical:
             1.10
         )
 
-    if st.button("Run Clinical Assessment", type="primary"):
+    if st.button(
+        "Run Clinical Assessment",
+        type="primary",
+        key="run_clinical"
+    ):
 
         patient = {
             "gender_male": int(cl_gender == "Male"),
@@ -147,79 +138,80 @@ with tab_clinical:
             "atlas_scaling_factor": cl_asf,
         }
 
-        prediction = predict_patient(patient)
+        result = predict_patient(patient)
 
-        st.session_state["clinical_result"] = {
-            **prediction,
-            "fields": patient,
-        }
+        st.session_state["clinical_result"] = result
 
     if "clinical_result" in st.session_state:
 
         result = st.session_state["clinical_result"]
 
-        badge_color = CLASS_COLORS.get(result["label"], "#898781")
+        # Prediction display
+        if result["label"] == "Demented":
+            color = COLOR_CRITICAL
+            icon = "🔴"
+        else:
+            color = COLOR_GOOD
+            icon = "🟢"
+
 
         st.markdown(
-            f"<div style='padding:14px 18px;border-radius:10px;"
-            f"background:{badge_color}1a;"
-            f"border-left:5px solid {badge_color};'>"
-            f"<span style='color:{badge_color};font-size:20px;'>●</span>"
-            f" <span style='font-size:20px;font-weight:bold;'>"
-            f"{result['label']}</span>"
-            f"<span> — Confidence: {result['confidence']:.1f}%</span>"
-            f"</div>",
-            unsafe_allow_html=True,
+            f"""
+            <div style="
+            padding:20px;
+            border-radius:15px;
+            background:{color}22;
+            border-left:6px solid {color};
+            ">
+
+            <h2>{icon} {result['label']}</h2>
+
+            <p>
+            <b>Estimated dementia likelihood:</b>
+            {result['risk']:.1f}%
+            </p>
+
+            <p>
+            <b>Model certainty:</b>
+            {result['confidence']:.1f}%
+            </p>
+
+            </div>
+            """,
+            unsafe_allow_html=True
         )
 
-        st.info(RECOMMENDATIONS.get(result["label"], ""))
 
-        if selected_patient_id is not None:
+        st.divider()
 
-            if st.button("💾 Save to Patient Record"):
+        st.plotly_chart(
+            render_risk_gauge(
+                result["risk"],
+                "Estimated dementia risk"
+            ),
+            width="stretch",
+            theme=None,
+        )
 
-                update_assessment(
-                    selected_patient_id,
-                    "Clinical",
-                    result["fields"],
-                    result["label"],
-                    result["confidence"],
-                )
-
-                st.success("Saved to patient record.")
-
-        st.markdown("---")
-
+        # SHAP explanation
         st.subheader("Why did the model make this prediction?")
 
-        for _, row in result["importance"].head(5).iterrows():
 
-            if row["Impact"] > 0:
-                st.write(
-                    f"⬆ **{row['Feature']}** increased the predicted risk."
-                )
+        top = result["importance"].head(5)
+
+
+        for _, row in top.iterrows():
+
+            if row["impact"] > 0:
+                icon = "⬆"
             else:
-                st.write(
-                    f"⬇ **{row['Feature']}** decreased the predicted risk."
-                )
+                icon = "⬇"
 
-st.markdown("---")
-st.info("🔬 Risk factor breakdown (SHAP)")
-st.markdown("---")
 
-st.subheader("Why did the model make this prediction?")
-top = result["importance"]
+            st.write(
+                f"""
+                {icon} **{row['feature']}**
 
-for _, row in top.head(5).iterrows():
-
-    if row["Impact"] > 0:
-
-        st.write(
-            f"⬆ **{row['Feature']}** increased the predicted dementia risk."
-        )
-
-    else:
-
-        st.write(
-            f"⬇ **{row['Feature']}** decreased the predicted dementia risk."
-        )
+                {row['text']}
+                """
+            )
