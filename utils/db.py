@@ -3,6 +3,7 @@ from datetime import date
 from pathlib import Path
 
 import pandas as pd
+import streamlit as st
 
 # database.db isn't downloaded from anywhere — this app creates it itself.
 # This just decides where it lives: a file named database.db at the project root.
@@ -68,6 +69,7 @@ def insert_patient(data: dict) -> int:
     conn.commit()
     new_id = cur.lastrowid
     conn.close()
+    fetch_all_patients.clear()
     return new_id
 
 
@@ -80,8 +82,10 @@ def update_assessment(patient_id: int, assessment_type: str, fields: dict, predi
     conn.execute(f"UPDATE patients SET {set_clause} WHERE id = :id", params)
     conn.commit()
     conn.close()
+    fetch_all_patients.clear()
 
 
+@st.cache_data
 def fetch_all_patients() -> pd.DataFrame:
     conn = get_connection()
     df = pd.read_sql_query("SELECT * FROM patients", conn)
@@ -116,6 +120,7 @@ def delete_patient(patient_id: int) -> None:
     conn.execute("DELETE FROM patients WHERE id = ?", (patient_id,))
     conn.commit()
     conn.close()
+    fetch_all_patients.clear()
 
 
 def display_id(patient_id: int) -> str:

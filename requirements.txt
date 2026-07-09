@@ -5,3 +5,8 @@ plotly
 pandas
 fpdf2
 qrcode[pil]
+xgboost
+shap
+joblib
+scikit-learn
+matplotlib

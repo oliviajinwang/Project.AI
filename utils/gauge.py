@@ -6,10 +6,10 @@ def render_risk_gauge(risk_percent: float, subtitle: str) -> go.Figure:
         go.Indicator(
             mode="gauge+number",
             value=risk_percent,
-            number={"suffix": "%"},
-            title={"text": subtitle},
+            number={"suffix": "%", "font": {"color": "#1A1A2E"}},
+            title={"text": subtitle, "font": {"color": "#1A1A2E"}},
             gauge={
-                "axis": {"range": [0, 100]},
+                "axis": {"range": [0, 100], "tickcolor": "#1A1A2E", "tickfont": {"color": "#1A1A2E"}},
                 "bar": {"color": "#4B3F72"},
                 "steps": [
                     {"range": [0, 30], "color": "#e5f6e5"},
@@ -19,5 +19,10 @@ def render_risk_gauge(risk_percent: float, subtitle: str) -> go.Figure:
             },
         )
     )
-    fig.update_layout(height=280, margin=dict(l=20, r=20, t=50, b=20), paper_bgcolor="rgba(0,0,0,0)")
+    fig.update_layout(
+        height=280,
+        margin=dict(l=20, r=20, t=50, b=20),
+        paper_bgcolor="rgba(0,0,0,0)",
+        font=dict(color="#1A1A2E"),
+    )
     return fig

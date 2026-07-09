@@ -12,8 +12,8 @@ COLOR_MUTED = "#898781"
 COLOR_CATEGORICAL_1 = "#2a78d6"
 COLOR_CATEGORICAL_2 = "#1baf7a"
 AGE_ORDINAL_RAMP = ["#86b6ef", "#6da7ec", "#5598e7", "#2a78d6", "#1c5cab", "#104281"]
-GRIDLINE = "#e1e0d9"
-AXIS_INK = "#898781"
+GRIDLINE = "#c9c7c0"
+AXIS_INK = "#2E2A47"
 
 df = fetch_all_patients()
 
@@ -41,9 +41,14 @@ def _bar_figure(categories, values, colors, y_title="Patients"):
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
         bargap=0.35,
-        yaxis=dict(title=y_title, gridcolor=GRIDLINE, tickfont=dict(color=AXIS_INK)),
-        xaxis=dict(tickfont=dict(color=AXIS_INK)),
-        font=dict(color="#0b0b0b"),
+        yaxis=dict(
+            title=dict(text=y_title, font=dict(color=AXIS_INK)),
+            gridcolor=GRIDLINE,
+            tickfont=dict(color=AXIS_INK, size=13),
+            automargin=True,
+        ),
+        xaxis=dict(tickfont=dict(color=AXIS_INK, size=13), automargin=True),
+        font=dict(color=AXIS_INK),
     )
     return fig
 

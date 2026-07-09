@@ -1,8 +1,29 @@
+import json
+
 import joblib
 import pandas as pd
+import streamlit as st
 
-model = joblib.load("models/lifestyle_model.pkl")
-explainer = joblib.load("models/lifestyle_shap_explainer.pkl")
+
+@st.cache_resource
+def _load_model():
+    return joblib.load("models/lifestyle_model.pkl")
+
+
+@st.cache_resource
+def _load_explainer():
+    return joblib.load("models/lifestyle_shap_explainer.pkl")
+
+
+@st.cache_resource
+def _load_threshold():
+    with open("models/lifestyle_threshold.json") as f:
+        return json.load(f)["threshold"]
+
+
+model = _load_model()
+explainer = _load_explainer()
+DECISION_THRESHOLD = _load_threshold()
 
 
 FEATURE_DESCRIPTIONS = {
@@ -42,8 +63,8 @@ def explain_feature(feature, value, shap_value):
 def predict_lifestyle(patient_dict):
     patient = pd.DataFrame([patient_dict])
 
-    prediction = int(model.predict(patient)[0])
     probabilities = model.predict_proba(patient)[0]
+    prediction = int(probabilities[1] >= DECISION_THRESHOLD)
 
     risk_probability = probabilities[1]
     prediction_probability = probabilities[prediction]

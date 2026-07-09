@@ -13,6 +13,3 @@ __pycache__/
 # Data
 *.db
 data/
-
-# Models
-models/*.pkl

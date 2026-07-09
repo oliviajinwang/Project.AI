@@ -1,9 +1,30 @@
+import json
+
 import joblib
 import pandas as pd
 import numpy as np
+import streamlit as st
 
-model = joblib.load("models/clinician_model.pkl")
-explainer = joblib.load("models/clinician_shap_explainer.pkl")
+
+@st.cache_resource
+def _load_model():
+    return joblib.load("models/clinician_model.pkl")
+
+
+@st.cache_resource
+def _load_explainer():
+    return joblib.load("models/clinician_shap_explainer.pkl")
+
+
+@st.cache_resource
+def _load_threshold():
+    with open("models/clinical_threshold.json") as f:
+        return json.load(f)["threshold"]
+
+
+model = _load_model()
+explainer = _load_explainer()
+DECISION_THRESHOLD = _load_threshold()
 
 
 FEATURE_DESCRIPTIONS = {
@@ -78,12 +99,11 @@ def predict_patient(patient_dict):
     patient = pd.DataFrame([patient_dict])
 
 
-    # Prediction
-    prediction = int(model.predict(patient)[0])
-
-
     # Probabilities
     probabilities = model.predict_proba(patient)[0]
+
+    # Prediction (tuned decision threshold, not the default 0.5)
+    prediction = int(probabilities[1] >= DECISION_THRESHOLD)
 
     dementia_probability = probabilities[1]
     prediction_probability = probabilities[prediction]

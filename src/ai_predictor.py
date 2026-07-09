@@ -1,3 +1,5 @@
+import json
+
 import pandas as pd
 import numpy as np
 import xgboost as xgb
@@ -8,9 +10,11 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report, accuracy_score
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import precision_score, recall_score, f1_score
-from sklearn.metrics import roc_auc_score
-from sklearn.model_selection import cross_val_score
+from sklearn.metrics import roc_auc_score, precision_recall_curve
+from sklearn.model_selection import cross_val_score, cross_val_predict, StratifiedKFold
 from sklearn.calibration import CalibratedClassifierCV
+import matplotlib
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from sklearn.calibration import CalibrationDisplay
 from sklearn.metrics import RocCurveDisplay
@@ -115,16 +119,47 @@ def train_pure_clinical_model(clean_data_path):
         f"Std Dev: {scores.std():.3f}"
     )
 
-    # Replace y_pred = model.predict(X_test) with this:
+    # Tune the decision threshold on out-of-fold predictions instead of
+    # guessing (0.35 was a reasonable instinct — a missed "Demented" case
+    # is worse than a false alarm here — but a guessed constant doesn't
+    # generalize, and critically was never persisted for the live app to
+    # actually use). F2 weights recall over precision.
+    print("\nTuning decision threshold via out-of-fold predictions...")
+    oof_probs = cross_val_predict(
+        CalibratedClassifierCV(
+            xgb.XGBClassifier(
+                objective="binary:logistic",
+                eval_metric="logloss",
+                n_estimators=200,
+                learning_rate=0.03,
+                max_depth=3,
+                subsample=0.8,
+                colsample_bytree=0.7,
+                scale_pos_weight=1.5,
+                reg_alpha=0.1,
+                reg_lambda=1.0,
+                random_state=42,
+            ),
+            method="isotonic",
+            cv=5,
+        ),
+        X_train,
+        y_train,
+        cv=StratifiedKFold(n_splits=5, shuffle=True, random_state=42),
+        method="predict_proba",
+        n_jobs=-1,
+    )[:, 1]
+
+    beta = 2
+    precisions, recalls, thresholds = precision_recall_curve(y_train, oof_probs)
+    f_beta = (1 + beta**2) * precisions * recalls / (beta**2 * precisions + recalls + 1e-9)
+    best_idx = int(np.argmax(f_beta[:-1]))
+    custom_threshold = float(thresholds[best_idx])
+    print(f"Chosen threshold: {custom_threshold:.3f} (out-of-fold F2={f_beta[best_idx]:.3f})")
+
     y_prob = model.predict_proba(X_test)
     positive_probabilities = y_prob[:, 1]
-
-    # Lower threshold from 0.5 to 0.35 to catch more true cases
-    custom_threshold = 0.35
     y_pred = (positive_probabilities >= custom_threshold).astype(int)
-
-    # Generate probability predictions for the positive class (Demented)
-    y_prob = model.predict_proba(X_test)
 
     print("\nFirst 10 probability predictions:")
 
@@ -210,10 +245,13 @@ def train_pure_clinical_model(clean_data_path):
     
     joblib.dump(model, "models/clinician_model.pkl")
     joblib.dump(explainer, "models/clinician_shap_explainer.pkl")
-    
+
     # Export a test schema reference row for Person 3's pipeline matching
     X_test.head(1).to_csv("models/clinical_sample_input.csv", index=False)
-    
+
+    with open("models/clinical_threshold.json", "w") as f:
+        json.dump({"threshold": custom_threshold}, f)
+
     print("🎉 Production assets ready for UI population!")
 
 if __name__ == "__main__":

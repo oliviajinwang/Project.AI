@@ -33,12 +33,14 @@ def render_shap_breakdown(importance: pd.DataFrame, top_n: int = 5) -> go.Figure
     fig.update_layout(
         title="Top factors driving this prediction",
         xaxis_title="⬅ lowers risk        SHAP impact        raises risk ➡",
-        height=120 + 40 * len(top),
-        margin=dict(l=10, r=40, t=50, b=40),
+        height=140 + 40 * len(top),
+        margin=dict(l=10, r=80, t=50, b=40),
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
         font=dict(color="#1A1A2E"),
         showlegend=False,
+        yaxis=dict(automargin=True),
+        xaxis=dict(automargin=True),
     )
 
     return fig
