@@ -33,6 +33,12 @@ elif st.session_state.role == "patient":
     st.sidebar.markdown("### Patient Portal")
     st.sidebar.markdown("---")
 
+    if st.sidebar.button("Switch Role"):
+        st.session_state.role = None
+        st.rerun()
+
+    st.sidebar.markdown("---")
+
     pages = [
         st.Page("views/patient_check.py", title="Quick Risk Check", default=True),
         st.Page("views/register_patient.py", title="Register Patient"),
@@ -40,12 +46,6 @@ elif st.session_state.role == "patient":
         st.Page("views/medical_report.py", title="Medical Report"),
     ]
     nav = st.navigation(pages)
-
-    st.sidebar.markdown("---")
-    if st.sidebar.button("Switch Role"):
-        st.session_state.role = None
-        st.rerun()
-
     nav.run()
 
 elif st.session_state.role == "clinic":
@@ -56,17 +56,17 @@ elif st.session_state.role == "clinic":
         st.sidebar.markdown("### Clinic Portal")
         st.sidebar.markdown("---")
 
+        if st.sidebar.button("Log Out / Switch Role"):
+            st.session_state.role = None
+            st.session_state.clinic_authenticated = False
+            st.rerun()
+
+        st.sidebar.markdown("---")
+
         pages = [
             st.Page("views/dashboard.py", title="Dashboard", default=True),
             st.Page("views/history.py", title="Patient History"),
             st.Page("views/about.py", title="About"),
         ]
         nav = st.navigation(pages)
-
-        st.sidebar.markdown("---")
-        if st.sidebar.button("Log Out / Switch Role"):
-            st.session_state.role = None
-            st.session_state.clinic_authenticated = False
-            st.rerun()
-
         nav.run()
