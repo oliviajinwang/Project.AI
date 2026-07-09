@@ -3,6 +3,7 @@ import streamlit as st
 from utils.db import display_id, fetch_all_patients, update_assessment
 from utils.gauge import render_risk_gauge
 from utils.report import RECOMMENDATIONS
+from utils.shap_chart import render_shap_breakdown
 from src.predict import predict_patient
 
 COLOR_GOOD = "#0ca30c"
@@ -196,6 +197,11 @@ with tab_clinical:
         # SHAP explanation
         st.subheader("Why did the model make this prediction?")
 
+        st.plotly_chart(
+            render_shap_breakdown(result["importance"], top_n=5),
+            width="stretch",
+            theme=None,
+        )
 
         top = result["importance"].head(5)
 

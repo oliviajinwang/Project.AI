@@ -7,6 +7,16 @@ footer { visibility: hidden; }
 
 .stApp {
     background: #F5F3FA;
+    color: #1A1A2E;
+}
+
+.stApp, .stApp p, .stApp span, .stApp label,
+.stApp li, .stApp div[data-testid="stMarkdownContainer"] {
+    color: #1A1A2E;
+}
+
+.stApp h1, .stApp h2, .stApp h3, .stApp h4, .stApp h5, .stApp h6 {
+    color: #2E2A47;
 }
 
 .block-container {
@@ -26,7 +36,7 @@ footer { visibility: hidden; }
 .bg-subtitle {
     text-align: center;
     font-size: 20px;
-    color: #666666;
+    color: #4A4A4A;
 }
 
 .bg-section {
@@ -40,7 +50,7 @@ footer { visibility: hidden; }
 .bg-footer {
     text-align: center;
     font-size: 14px;
-    color: gray;
+    color: #555555;
     margin-top: 40px;
 }
 
