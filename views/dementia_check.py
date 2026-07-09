@@ -235,6 +235,17 @@ with tab_clinical:
             theme=None,
         )
 
+        # Limitations
+        st.subheader("Limitations")
+        st.write(
+            "Limitations: This model was trained on approximately 370 patients from the OASIS dataset, " 
+            "with dementia and converted cases merged into a binary classification task. " 
+            "The limited dataset size means probability estimates may fluctuate more than they would in larger clinical datasets, "
+            "so the model is intended as a decision-support prototype rather than a diagnostic tool."
+        )
+        st.divider()
+
+
         top = result["importance"].head(5)
 
 
