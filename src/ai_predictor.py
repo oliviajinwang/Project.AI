@@ -13,6 +13,7 @@ from sklearn.model_selection import cross_val_score
 from sklearn.calibration import CalibratedClassifierCV
 import matplotlib.pyplot as plt
 from sklearn.calibration import CalibrationDisplay
+from sklearn.metrics import RocCurveDisplay
 
 def train_pure_clinical_model(clean_data_path):
     print("🤖 Loading pre-cleaned numeric dataset...")
@@ -45,11 +46,14 @@ def train_pure_clinical_model(clean_data_path):
     base_model = xgb.XGBClassifier(
         objective="binary:logistic",
         eval_metric="logloss",
-        n_estimators=300,
+        n_estimators=200,
         learning_rate=0.03,
         max_depth=3,
         subsample=0.8,
-        colsample_bytree=0.8,
+        colsample_bytree=0.7,
+        scale_pos_weight=1.5,  # Heuristically forces the model to prioritize the positive class
+        reg_alpha=0.1,          # Added regularization
+        reg_lambda=1.0,         # Added regularization
         random_state=42
     )
 
@@ -66,7 +70,7 @@ def train_pure_clinical_model(clean_data_path):
 
     model = CalibratedClassifierCV(
         base_model,
-        method="sigmoid",
+        method="isotonic",
         cv=5
     )
 
@@ -111,7 +115,13 @@ def train_pure_clinical_model(clean_data_path):
         f"Std Dev: {scores.std():.3f}"
     )
 
-    y_pred = model.predict(X_test)
+    # Replace y_pred = model.predict(X_test) with this:
+    y_prob = model.predict_proba(X_test)
+    positive_probabilities = y_prob[:, 1]
+
+    # Lower threshold from 0.5 to 0.35 to catch more true cases
+    custom_threshold = 0.35
+    y_pred = (positive_probabilities >= custom_threshold).astype(int)
 
     # Generate probability predictions for the positive class (Demented)
     y_prob = model.predict_proba(X_test)
@@ -150,7 +160,7 @@ def train_pure_clinical_model(clean_data_path):
     CalibrationDisplay.from_predictions(
         y_test,
         y_prob[:,1],
-        n_bins=5
+        n_bins=3
     )
 
     plt.title("Calibration Curve")
