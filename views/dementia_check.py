@@ -191,76 +191,112 @@ with tab_clinical:
         st.markdown(
             f"""
             <div style="
-            padding:20px;
-            border-radius:15px;
-            background:{color}22;
-            border-left:6px solid {color};
+                padding:25px;
+                border-radius:18px;
+                background:{color}18;
+                border-left:7px solid {color};
             ">
 
             <h2>{icon} {result['label']}</h2>
 
-            <p>
-            <b>Estimated dementia likelihood:</b>
-            {result['risk']:.1f}%
-            </p>
+            <hr>
+
+            <h3>Estimated dementia risk</h3>
+
+            <h1>{result['risk']:.1f}%</h1>
 
             <p>
-            <b>Model certainty:</b>
-            {result['confidence']:.1f}%
+            Based on the clinical information entered, the model estimates a
+            <b>{result['risk']:.1f}% probability</b>
+            that this patient belongs to the dementia group.
             </p>
+
+            <br>
+
+            <b>Model confidence in this prediction:</b>
+            {result['confidence']:.1f}%
 
             </div>
             """,
-            unsafe_allow_html=True
+            unsafe_allow_html=True,
         )
-
 
         st.divider()
 
         st.plotly_chart(
             render_risk_gauge(
                 result["risk"],
-                "Estimated dementia risk"
+                "Estimated probability of dementia"
             ),
             width="stretch",
             theme=None,
         )
 
+        st.info(
+            f"""
+        **How should this be interpreted?**
+
+        • Estimated dementia probability: **{result['risk']:.1f}%**
+
+        • Predicted class: **{result['label']}**
+
+        • Model confidence: **{result['confidence']:.1f}%**
+
+        The probability represents the model's estimate based on patients
+        with similar clinical characteristics in the training data.
+        It is **not** a medical diagnosis.
+        """
+        )
+
         # SHAP explanation
-        st.subheader("Why did the model make this prediction?")
+        st.subheader("Factors influencing this prediction")
+
+        top = (
+            result["importance"]
+            .sort_values("strength", ascending=False)
+            .head(5)
+        )
+
+        for _, row in top.iterrows():
+
+            if row["impact"] > 0:
+                icon = "🔺 Increased risk"
+            else:
+                icon = "🔻 Reduced risk"
+
+
+            st.markdown(f"""
+            ### {icon}
+
+            **{row['feature']}**
+
+            {row['text']}
+            """)
 
         st.plotly_chart(
             render_shap_breakdown(result["importance"], top_n=5),
             width="stretch",
             theme=None,
         )
-
+        
         # Limitations
-        st.subheader("Limitations")
-        st.write(
-            "Limitations: This model was trained on approximately 370 patients from the OASIS dataset, " 
-            "with dementia and converted cases merged into a binary classification task. " 
-            "The limited dataset size means probability estimates may fluctuate more than they would in larger clinical datasets, "
-            "so the model is intended as a decision-support prototype rather than a diagnostic tool."
-        )
         st.divider()
+        st.subheader("Limitations")
 
+        st.warning(
+        """
+        This prototype was trained on approximately **370 MRI visits** from the
+        OASIS longitudinal dataset.
 
-        top = result["importance"].head(5)
+        The model should be interpreted as a clinical decision-support tool rather
+        than a diagnostic system.
 
+        Because the training dataset is relatively small:
 
-        for _, row in top.iterrows():
+        • probability estimates may fluctuate
 
-            if row["impact"] > 0:
-                icon = "⬆"
-            else:
-                icon = "⬇"
+        • uncommon patient profiles may be less reliable
 
-
-            st.write(
-                f"""
-                {icon} **{row['feature']}**
-
-                {row['text']}
-                """
-            )
+        • predictions should always be interpreted alongside clinical evaluation.
+        """
+        )
