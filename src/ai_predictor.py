@@ -6,6 +6,13 @@ import joblib
 import os
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report, accuracy_score
+from sklearn.metrics import confusion_matrix
+from sklearn.metrics import precision_score, recall_score, f1_score
+from sklearn.metrics import roc_auc_score
+from sklearn.model_selection import cross_val_score
+from sklearn.calibration import CalibratedClassifierCV
+import matplotlib.pyplot as plt
+from sklearn.calibration import CalibrationDisplay
 
 def train_pure_clinical_model(clean_data_path):
     print("🤖 Loading pre-cleaned numeric dataset...")
@@ -23,6 +30,7 @@ def train_pure_clinical_model(clean_data_path):
         'mri_id'
     ])
     
+    
     # 2. Stratified Train/Test Split (preserves the ratio of classes 0, 1, and 2)
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.2, random_state=42, stratify=y
@@ -33,21 +41,19 @@ def train_pure_clinical_model(clean_data_path):
     
     # 3. Configure and Train the XGBoost Multi-Class Predictor
     print("🏋️ Fitting XGBoost Multi-Class Framework...")
-    # model = xgb.XGBClassifier(
-    #     objective='multi:softprob',  # Generates a dynamic probability array for each class
-    #     num_class=3,                 # 0: Nondemented, 1: Demented, 2: Converted
-    #     max_depth=4,                 # Controlled depth to match your cohort size without overfitting
-    #     learning_rate=0.05,          # Stable learning step
-    #     random_state=42
-    # )
 
-    model = xgb.XGBClassifier(
+    base_model = xgb.XGBClassifier(
         objective="binary:logistic",
-        max_depth=4,
-        learning_rate=0.05,
-        random_state=42,
-        eval_metric="logloss"
+        eval_metric="logloss",
+        n_estimators=300,
+        learning_rate=0.03,
+        max_depth=3,
+        subsample=0.8,
+        colsample_bytree=0.8,
+        random_state=42
     )
+
+    base_model.fit(X_train, y_train)
 
     print("\nColumns in X_train:")
     print(X_train.columns.tolist())
@@ -58,11 +64,66 @@ def train_pure_clinical_model(clean_data_path):
     print("\nAny object columns?")
     print(X_train.select_dtypes(include=["object", "string"]).columns.tolist())
 
+    model = CalibratedClassifierCV(
+        base_model,
+        method="sigmoid",
+        cv=5
+    )
+
     model.fit(X_train, y_train)
-    
+
     # 4. Generate Predictions & Validate Target Metrics
 
+    importance = pd.DataFrame({
+        "Feature": X.columns,
+        "Importance": base_model.feature_importances_
+    }).sort_values(
+        by="Importance",
+        ascending=False
+    )
+
+    print("\nFeature Importance")
+    print(importance)
+
+    # importance = importance.sort_values(
+    #     "Importance",
+    #     ascending=False
+    # )
+
+    # print("\nFeature Importance")
+    # print(importance)
+    
+    # Cross-Validation for Model Robustness
+    scores = cross_val_score(
+        model,
+        X,
+        y,
+        cv=5,
+        scoring="accuracy"
+    )
+    print("\n5-Fold Cross Validation")
+    print(scores)
+
+    print(
+        f"Mean Accuracy: {scores.mean():.3f}"
+    )
+    print(
+        f"Std Dev: {scores.std():.3f}"
+    )
+
     y_pred = model.predict(X_test)
+
+    # Generate probability predictions for the positive class (Demented)
+    y_prob = model.predict_proba(X_test)
+
+    print("\nFirst 10 probability predictions:")
+
+    for i in range(10):
+        print(
+            f"True={y_test.iloc[i]} "
+            f"Prob={y_prob[i][1]:.3f}"
+        )
+
     print("\n✅ --- TESTING PERFORMANCE METRICS ---")
     
     print("Before argmax:")
@@ -84,11 +145,54 @@ def train_pure_clinical_model(clean_data_path):
     print("Unique true labels:", np.unique(y_test))
     print("Unique predicted labels:", np.unique(y_pred))
     print(df["dementia_status"].value_counts())
-    print(classification_report(y_test, y_pred, labels=[0, 1, 2], target_names=['Nondemented (0)', 'Demented (1)', 'Converted (2)'], zero_division=0))
+    print(classification_report(y_test, y_pred, labels=[0, 1], target_names=['Nondemented (0)', 'Demented (1)'], zero_division=0))
+
+    CalibrationDisplay.from_predictions(
+        y_test,
+        y_prob[:,1],
+        n_bins=5
+    )
+
+    plt.title("Calibration Curve")
+    plt.show()
+
+
+    # Confusion Matrix for further insight into model performance
+    print("\nConfusion Matrix")
+    cm = confusion_matrix(y_test, y_pred)
+
+    print(cm)
+
+    tn, fp, fn, tp = cm.ravel()
+
+    print(f"\nTrue Negatives : {tn}")
+    print(f"False Positives: {fp}")
+    print(f"False Negatives: {fn}")
+    print(f"True Positives : {tp}")
+
+    # Metrics for model evaluation
+    print("\nKey Metrics")
+    print(f"Accuracy : {accuracy_score(y_test, y_pred):.3f}")
+    print(f"Precision: {precision_score(y_test, y_pred):.3f}")
+    print(f"Recall   : {recall_score(y_test, y_pred):.3f}")
+    print(f"F1 Score : {f1_score(y_test, y_pred):.3f}")
+
+    # Calculate ROC-AUC for binary classification
+    auc = roc_auc_score(y_test, y_prob[:,1])
+
+    print(f"\nROC-AUC: {auc:.3f}")
     
+    RocCurveDisplay.from_predictions(
+        y_test,
+        y_prob[:,1]
+    )
+
+    plt.title("ROC Curve")
+    plt.show()
+
     # 5. Build Tree-Based SHAP Structure
     print("🔍 Pre-computing SHAP Explainer objects...")
-    explainer = shap.TreeExplainer(model)
+    explainer = shap.TreeExplainer(base_model)
     
     # 6. Export Binary Assets to the Team Folder
     os.makedirs("models", exist_ok=True)
