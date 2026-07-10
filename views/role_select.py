@@ -20,7 +20,7 @@ st.markdown(
         font-size: 84px;
         font-weight: 800;
         letter-spacing: -0.02em;
-        color: #000000;
+        color: var(--ink-primary);
         line-height: 1.05;
         margin-bottom: 16px;
         text-align: center;
@@ -28,7 +28,7 @@ st.markdown(
     }
     .hero-subtitle {
         font-size: 21px;
-        color: #3D3D42;
+        color: var(--ink-secondary);
         max-width: 640px;
         text-align: center;
     }
@@ -38,7 +38,7 @@ st.markdown(
         font-weight: 600;
         letter-spacing: 0.03em;
         text-transform: uppercase;
-        color: #63636B;
+        color: var(--ink-muted);
         text-align: center;
         width: 100%;
         animation: bounce 2s ease-in-out infinite;
@@ -86,7 +86,7 @@ st.markdown(
     }
 
     .select-prompt {
-        color: #000000;
+        color: var(--ink-primary);
         font-size: 26px;
         font-weight: 700;
         text-align: center;
