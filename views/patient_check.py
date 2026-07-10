@@ -43,6 +43,31 @@ if "patient_result" in st.session_state:
     st.caption(f"Model prediction: **{result['label']}** ({result['confidence']:.1f}% confidence)")
     st.info(RECOMMENDATIONS.get(result["label"], ""))
 
+    if result["label"] == "High Risk":
+        st.warning(
+            "**What this means:** this screening flagged a higher likelihood of "
+            "modifiable dementia risk factors based on the answers entered. It is "
+            "**not a diagnosis** — many people who score High Risk here never go on "
+            "to develop dementia, and this tool has no access to MRI scans or "
+            "cognitive test results, which a real evaluation would use.\n\n"
+            "**Suggested next step:** share this result with the person's primary "
+            "care physician. They can order a proper cognitive assessment (such as "
+            "an MMSE) if it seems warranted."
+        )
+    else:
+        st.success(
+            "**What this means:** based on the factors entered, this screening did "
+            "not flag elevated risk. This isn't a guarantee — regular checkups "
+            "remain the best way to catch changes early, especially as risk factors "
+            "like age change over time."
+        )
+
+    st.caption(
+        "This estimate comes from a machine-learning model trained on a limited "
+        "research dataset (not a large clinical trial). Individual results can "
+        "vary, and this tool cannot replace a qualified physician's judgment."
+    )
+
     st.markdown("---")
     st.subheader("Why did the model make this prediction?")
     st.plotly_chart(
