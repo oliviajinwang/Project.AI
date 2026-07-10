@@ -84,34 +84,48 @@ st.markdown(
     }
 
     @keyframes fadeInUp {
-        from { opacity: 0; transform: translateY(120px); }
-        to { opacity: 1; transform: translateY(0); }
+        from {
+            opacity: 0;
+            transform: translateY(240px) scale(0.82);
+            filter: blur(10px);
+        }
+        55% {
+            filter: blur(0);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+            filter: blur(0);
+        }
     }
 
     /* Scroll-driven reveal for the two role cards. "entry" ties to the
        element's OWN height crossing the viewport edge, which for a ~350px
        card resolves almost instantly -- too fast. "cover" spans the
        element's full pass through the viewport (~element height +
-       viewport height), so tying the reveal to the first half of that
-       gives a slow, scroll-distance-driven effect instead of a quick
-       pop-in. Falls back to a plain fade-in on load for browsers without
-       animation-timeline support (Firefox / older Safari) so the cards
-       are never stuck invisible. */
+       viewport height), so a wide slice of that gives a slow,
+       scroll-distance-driven effect instead of a quick pop-in. The two
+       cards use offset ranges (not animation-delay, whose semantics get
+       murky under a scroll timeline) so Clinic Staff visibly trails
+       Patient rather than arriving almost together. Falls back to a
+       plain fade-in on load for browsers without animation-timeline
+       support (Firefox / older Safari) so the cards are never stuck
+       invisible. */
     .st-key-patient_card, .st-key-clinic_card {
         opacity: 0;
-        animation: fadeInUp 1.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+        animation: fadeInUp 2.2s cubic-bezier(0.16, 1, 0.3, 1) both;
         animation-timeline: view();
-        animation-range: cover 0% cover 55%;
     }
-    .st-key-clinic_card { animation-delay: 0.15s; }
+    .st-key-patient_card { animation-range: cover 0% cover 85%; }
+    .st-key-clinic_card { animation-range: cover 12% cover 97%; }
 
     @supports not (animation-timeline: view()) {
         .st-key-patient_card, .st-key-clinic_card {
             opacity: 1;
-            animation: fadeInUp 0.8s ease-out both;
+            animation: fadeInUp 1s ease-out both;
         }
         .st-key-patient_card { animation-delay: 0.1s; }
-        .st-key-clinic_card { animation-delay: 0.25s; }
+        .st-key-clinic_card { animation-delay: 0.3s; }
     }
     </style>
     """,
