@@ -85,6 +85,12 @@ st.markdown(
         justify-content: center;
     }
 
+    .select-prompt {
+        color: #000000;
+        font-size: 19px;
+        font-weight: 700;
+    }
+
     /* Equal card heights + pin the CTA to the bottom of each card,
        regardless of the description text wrapping to a different number
        of lines -- otherwise the two buttons don't line up. */
@@ -161,7 +167,7 @@ with st.container(key="hero_section"):
     st.button("About", key="about_link", on_click=_open_about)
 
 with st.container(key="options_section"):
-    st.write("Please select how you'd like to continue:")
+    st.markdown("<div class='select-prompt'>Please select how you'd like to continue:</div>", unsafe_allow_html=True)
     st.write("")
 
     col1, col2 = st.columns(2)
