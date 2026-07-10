@@ -281,8 +281,28 @@ hr {
 """
 
 
+_HIDE_SIDEBAR_CSS = """
+<style>
+section[data-testid="stSidebar"] { display: none !important; }
+</style>
+"""
+
+
 def inject_css() -> None:
     st.markdown(_CSS, unsafe_allow_html=True)
+
+
+def hide_sidebar() -> None:
+    # st.navigation(..., position="hidden") only hides the nav *links* --
+    # Streamlit still allocates the sidebar's own container (white
+    # background + collapse arrow), which showed up as a persistent empty
+    # white block next to the Welcome/About/login screens. Call this only
+    # once app.py has finished resolving st.session_state.role for the
+    # current run (it must NOT be folded into inject_css(), which has to
+    # stay early -- before the switch-role overlay renders -- or the
+    # overlay's own CSS, defined in the same stylesheet, wouldn't be
+    # loaded yet and it would render unstyled).
+    st.markdown(_HIDE_SIDEBAR_CSS, unsafe_allow_html=True)
 
 
 def render_footer() -> None:

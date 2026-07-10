@@ -3,7 +3,7 @@ import time
 import streamlit as st
 
 from utils.db import init_db  # stores patient data(patient history)
-from utils.layout import inject_css  #colors/design
+from utils.layout import hide_sidebar, inject_css  #colors/design
 
 st.set_page_config(
     page_title="BrainGuard AI",
@@ -12,7 +12,9 @@ st.set_page_config(
 )
 
 init_db()  # creates database.db here if it doesn't exist yet
-inject_css()  # applies the CSS design to the page
+inject_css()  # applies the CSS design to the page -- must run before the
+              # switch-role overlay below, or its own styling won't be
+              # loaded yet and it will render unstyled.
 
 if not st.session_state.get("_models_preloaded", False):
     # First-ever load in this browser session: import the prediction
@@ -46,6 +48,7 @@ def _start_switch_role():
 # full-viewport overlay guarantees nothing stale is visible regardless of
 # that reconciliation timing, instead of just hoping it resolves fast enough.
 if st.session_state._switching == "overlay":
+    hide_sidebar()
     with st.container(key="switching_overlay"):
         st.write("Logging out...")
     time.sleep(0.15)
@@ -61,6 +64,14 @@ if st.session_state._switching == "commit":
     st.session_state.history_last_selection = None
     st.session_state.reload_patient_record = True
     st.session_state._switching = None
+
+# st.session_state.role is now final for this run -- safe to decide whether
+# to hide the sidebar (see hide_sidebar()'s docstring for why this can't
+# just live inside inject_css() above).
+if st.session_state.role is None or (
+    st.session_state.role == "clinic" and not st.session_state.clinic_authenticated
+):
+    hide_sidebar()
 
 if st.session_state.role is None:
     if st.session_state.show_about:
