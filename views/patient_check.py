@@ -39,8 +39,7 @@ if "patient_result" in st.session_state:
         width="stretch",
         theme=None,
     )
-    st.caption(GAUGE_LEGEND)
-    st.caption(f"Model prediction: **{result['label']}**")
+    st.caption(f"{GAUGE_LEGEND}  ·  Model prediction: **{result['label']}**")
     st.info(RECOMMENDATIONS.get(result["label"], ""))
 
     if result["label"] == "High Risk":
@@ -81,16 +80,14 @@ if "patient_result" in st.session_state:
 
     st.markdown("---")
     st.subheader("Model confidence rating")
-    st.write(
+    st.write(f"**Model confidence:** {MODEL_METRICS['roc_auc']}%")
+    st.caption(
         f"In cross-validated testing, this model distinguishes higher-risk from "
-        f"lower-risk profiles with an **AUC of {MODEL_METRICS['roc_auc']}%** "
+        f"lower-risk profiles with an AUC of {MODEL_METRICS['roc_auc']}% "
         f"(50% = random guessing, 100% = perfect separation). Raw accuracy isn't "
         f"a meaningful number here — High Risk cases are rare in the training "
         f"data (about 1 in 20), so a model that always guessed \"Low Risk\" would "
         f"score misleadingly high on accuracy alone. This is a general statement "
-        f"about the model, not a statement about your specific result above.\n\n"
-        f"In plain terms: this is the model's overall confidence percentage — how "
-        f"trustworthy its risk estimates are across many patients in testing, not "
-        f"how confident it is about your specific result above (that's the gauge at "
-        f"the top)."
+        f"about the model, not a statement about your specific result above (that's "
+        f"the gauge at the top)."
     )

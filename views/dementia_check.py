@@ -70,8 +70,7 @@ with tab_lifestyle:
             width="stretch",
             theme=None,
         )
-        st.caption(GAUGE_LEGEND)
-        st.caption(f"Model prediction: **{result['label']}**")
+        st.caption(f"{GAUGE_LEGEND}  ·  Model prediction: **{result['label']}**")
         st.info(RECOMMENDATIONS.get(result["label"], ""))
 
         st.subheader("Why did the model make this prediction?")
@@ -86,14 +85,13 @@ with tab_lifestyle:
 
         st.markdown("---")
         st.subheader("Model confidence rating")
+        st.write(f"**Model confidence:** {LIFESTYLE_METRICS['roc_auc']}%")
         st.caption(
-            f"Model reliability (not this patient's result): in cross-validated "
-            f"testing this model separates higher- from lower-risk profiles with an "
-            f"AUC of {LIFESTYLE_METRICS['roc_auc']}% (50% = random, 100% = perfect). "
-            f"Raw accuracy isn't shown here -- High Risk cases are rare in the "
-            f"training data, so accuracy alone would be misleading. In plain terms, "
-            f"this is the model's overall confidence percentage across many patients "
-            f"in testing -- not a statement about this specific patient's result."
+            f"Not this patient's result -- in cross-validated testing this model "
+            f"separates higher- from lower-risk profiles with an AUC of "
+            f"{LIFESTYLE_METRICS['roc_auc']}% (50% = random, 100% = perfect). Raw "
+            f"accuracy isn't shown here -- High Risk cases are rare in the training "
+            f"data, so accuracy alone would be misleading."
         )
 
         if selected_patient_id is not None:
@@ -247,7 +245,7 @@ with tab_clinical:
             width="stretch",
             theme=None,
         )
-        st.caption(GAUGE_LEGEND)
+        st.caption(f"{GAUGE_LEGEND}  ·  Model prediction: **{result['label']}**")
 
         st.info(
             f"""
@@ -314,12 +312,10 @@ with tab_clinical:
 
         st.markdown("---")
         st.subheader("Model confidence rating")
-        st.write(
-            f"**Model accuracy (not this patient's result):** in cross-validated "
-            f"testing that keeps each patient's repeat visits entirely on one side "
-            f"of the split, this model correctly classifies "
-            f"**{CLINICAL_METRICS['accuracy']}%** of cases "
-            f"(AUC {CLINICAL_METRICS['roc_auc']}%). In plain terms, this is the "
-            f"model's overall confidence percentage across many patients in "
-            f"testing -- not a statement about this specific patient's result above."
+        st.write(f"**Model confidence:** {CLINICAL_METRICS['accuracy']}%")
+        st.caption(
+            f"Not this patient's result -- in cross-validated testing that keeps "
+            f"each patient's repeat visits entirely on one side of the split, this "
+            f"model correctly classifies {CLINICAL_METRICS['accuracy']}% of cases "
+            f"(AUC {CLINICAL_METRICS['roc_auc']}%)."
         )
