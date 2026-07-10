@@ -1,5 +1,10 @@
 import plotly.graph_objects as go
 
+GAUGE_LEGEND = (
+    "0–30%: Lower risk (green)  ·  30–60%: Moderate risk (yellow)  ·  "
+    "60–100%: Higher risk (red)"
+)
+
 
 def render_risk_gauge(risk_percent: float, subtitle: str) -> go.Figure:
     fig = go.Figure(

@@ -1,7 +1,7 @@
 import streamlit as st
 
 from utils.db import display_id, fetch_all_patients, update_assessment
-from utils.gauge import render_risk_gauge
+from utils.gauge import GAUGE_LEGEND, render_risk_gauge
 from utils.report import RECOMMENDATIONS
 from utils.shap_chart import render_shap_breakdown
 from src.predict import MODEL_METRICS as CLINICAL_METRICS, predict_patient
@@ -70,15 +70,9 @@ with tab_lifestyle:
             width="stretch",
             theme=None,
         )
+        st.caption(GAUGE_LEGEND)
         st.caption(f"Model prediction: **{result['label']}**")
         st.info(RECOMMENDATIONS.get(result["label"], ""))
-        st.caption(
-            f"Model reliability (not this patient's result): in cross-validated "
-            f"testing this model separates higher- from lower-risk profiles with an "
-            f"AUC of {LIFESTYLE_METRICS['roc_auc']}% (50% = random, 100% = perfect). "
-            f"Raw accuracy isn't shown here -- High Risk cases are rare in the "
-            f"training data, so accuracy alone would be misleading."
-        )
 
         st.subheader("Why did the model make this prediction?")
         st.plotly_chart(
@@ -89,6 +83,18 @@ with tab_lifestyle:
         for _, row in result["importance"].head(5).iterrows():
             direction = "Increased risk" if row["impact"] > 0 else "Reduced risk"
             st.write(f"**{row['feature']}** — {direction}\n\n{row['text']}")
+
+        st.markdown("---")
+        st.subheader("Model confidence rating")
+        st.caption(
+            f"Model reliability (not this patient's result): in cross-validated "
+            f"testing this model separates higher- from lower-risk profiles with an "
+            f"AUC of {LIFESTYLE_METRICS['roc_auc']}% (50% = random, 100% = perfect). "
+            f"Raw accuracy isn't shown here -- High Risk cases are rare in the "
+            f"training data, so accuracy alone would be misleading. In plain terms, "
+            f"this is the model's overall confidence percentage across many patients "
+            f"in testing -- not a statement about this specific patient's result."
+        )
 
         if selected_patient_id is not None:
             if st.session_state.get("confirm_save_lifestyle_id") != selected_patient_id:
@@ -241,6 +247,7 @@ with tab_clinical:
             width="stretch",
             theme=None,
         )
+        st.caption(GAUGE_LEGEND)
 
         st.info(
             f"""
@@ -288,14 +295,9 @@ with tab_clinical:
         st.subheader("Limitations")
 
         st.warning(
-        f"""
+        """
         This prototype was trained on approximately **370 MRI visits** from the
         OASIS longitudinal dataset.
-
-        **Model accuracy (not this patient's result):** in cross-validated testing
-        that keeps each patient's repeat visits entirely on one side of the split,
-        this model correctly classifies **{CLINICAL_METRICS['accuracy']}%** of
-        cases (AUC {CLINICAL_METRICS['roc_auc']}%).
 
         The model should be interpreted as a clinical decision-support tool rather
         than a diagnostic system.
@@ -308,4 +310,16 @@ with tab_clinical:
 
         • predictions should always be interpreted alongside clinical evaluation.
         """
+        )
+
+        st.markdown("---")
+        st.subheader("Model confidence rating")
+        st.write(
+            f"**Model accuracy (not this patient's result):** in cross-validated "
+            f"testing that keeps each patient's repeat visits entirely on one side "
+            f"of the split, this model correctly classifies "
+            f"**{CLINICAL_METRICS['accuracy']}%** of cases "
+            f"(AUC {CLINICAL_METRICS['roc_auc']}%). In plain terms, this is the "
+            f"model's overall confidence percentage across many patients in "
+            f"testing -- not a statement about this specific patient's result above."
         )

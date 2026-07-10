@@ -1,6 +1,6 @@
 import streamlit as st
 
-from utils.gauge import render_risk_gauge
+from utils.gauge import GAUGE_LEGEND, render_risk_gauge
 from utils.report import RECOMMENDATIONS
 from utils.shap_chart import render_shap_breakdown
 from src.predict_lifestyle import MODEL_METRICS, predict_lifestyle
@@ -39,6 +39,7 @@ if "patient_result" in st.session_state:
         width="stretch",
         theme=None,
     )
+    st.caption(GAUGE_LEGEND)
     st.caption(f"Model prediction: **{result['label']}**")
     st.info(RECOMMENDATIONS.get(result["label"], ""))
 
@@ -67,17 +68,6 @@ if "patient_result" in st.session_state:
         "vary, and this tool cannot replace a qualified physician's judgment."
     )
 
-    with st.expander("How reliable is this model, generally?"):
-        st.write(
-            f"In cross-validated testing, this model distinguishes higher-risk from "
-            f"lower-risk profiles with an **AUC of {MODEL_METRICS['roc_auc']}%** "
-            f"(50% = random guessing, 100% = perfect separation). Raw accuracy isn't "
-            f"a meaningful number here — High Risk cases are rare in the training "
-            f"data (about 1 in 20), so a model that always guessed \"Low Risk\" would "
-            f"score misleadingly high on accuracy alone. This is a general statement "
-            f"about the model, not a statement about your specific result above."
-        )
-
     st.markdown("---")
     st.subheader("Why did the model make this prediction?")
     st.plotly_chart(
@@ -88,3 +78,19 @@ if "patient_result" in st.session_state:
     for _, row in result["importance"].head(5).iterrows():
         direction = "Increased risk" if row["impact"] > 0 else "Reduced risk"
         st.write(f"**{row['feature']}** — {direction}\n\n{row['text']}")
+
+    st.markdown("---")
+    st.subheader("Model confidence rating")
+    st.write(
+        f"In cross-validated testing, this model distinguishes higher-risk from "
+        f"lower-risk profiles with an **AUC of {MODEL_METRICS['roc_auc']}%** "
+        f"(50% = random guessing, 100% = perfect separation). Raw accuracy isn't "
+        f"a meaningful number here — High Risk cases are rare in the training "
+        f"data (about 1 in 20), so a model that always guessed \"Low Risk\" would "
+        f"score misleadingly high on accuracy alone. This is a general statement "
+        f"about the model, not a statement about your specific result above.\n\n"
+        f"In plain terms: this is the model's overall confidence percentage — how "
+        f"trustworthy its risk estimates are across many patients in testing, not "
+        f"how confident it is about your specific result above (that's the gauge at "
+        f"the top)."
+    )
