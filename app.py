@@ -90,8 +90,6 @@ elif st.session_state.role == "patient":
     pages = [
         st.Page("views/patient_check.py", title="Quick Risk Check", default=True),
         st.Page("views/register_patient.py", title="Register Patient"),
-        st.Page("views/dementia_check.py", title="Dementia Check"),
-        st.Page("views/medical_report.py", title="Medical Report"),
     ]
     nav = st.navigation(pages)
     st.button("Switch Role", on_click=_start_switch_role, key="switch_role_btn")
@@ -108,6 +106,8 @@ elif st.session_state.role == "clinic":
         pages = [
             st.Page("views/dashboard.py", title="Dashboard", default=True),
             st.Page("views/history.py", title="Patient History"),
+            st.Page("views/dementia_check.py", title="Dementia Check"),
+            st.Page("views/medical_report.py", title="Medical Report"),
             st.Page(
                 "views/patient_detail.py",
                 title="Patient Detail",
