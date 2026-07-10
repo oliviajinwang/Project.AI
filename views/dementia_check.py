@@ -4,8 +4,8 @@ from utils.db import display_id, fetch_all_patients, update_assessment
 from utils.gauge import render_risk_gauge
 from utils.report import RECOMMENDATIONS
 from utils.shap_chart import render_shap_breakdown
-from src.predict import predict_patient
-from src.predict_lifestyle import predict_lifestyle
+from src.predict import MODEL_METRICS as CLINICAL_METRICS, predict_patient
+from src.predict_lifestyle import MODEL_METRICS as LIFESTYLE_METRICS, predict_lifestyle
 
 COLOR_GOOD = "#098009"
 COLOR_CRITICAL = "#d03b3b"
@@ -65,14 +65,20 @@ with tab_lifestyle:
 
     if "lifestyle_result" in st.session_state:
         result = st.session_state["lifestyle_result"]
-        risk_percent = result["confidence"] if result["label"] == "High Risk" else 100 - result["confidence"]
         st.plotly_chart(
-            render_risk_gauge(risk_percent, "Estimated dementia risk"),
+            render_risk_gauge(result["risk"], "Estimated dementia risk"),
             width="stretch",
             theme=None,
         )
-        st.caption(f"Model prediction: **{result['label']}** ({result['confidence']:.1f}% confidence)")
+        st.caption(f"Model prediction: **{result['label']}**")
         st.info(RECOMMENDATIONS.get(result["label"], ""))
+        st.caption(
+            f"Model reliability (not this patient's result): in cross-validated "
+            f"testing this model separates higher- from lower-risk profiles with an "
+            f"AUC of {LIFESTYLE_METRICS['roc_auc']}% (50% = random, 100% = perfect). "
+            f"Raw accuracy isn't shown here -- High Risk cases are rare in the "
+            f"training data, so accuracy alone would be misleading."
+        )
 
         st.subheader("Why did the model make this prediction?")
         st.plotly_chart(
@@ -220,11 +226,6 @@ with tab_clinical:
             that this patient belongs to the dementia group.
             </p>
 
-            <br>
-
-            <b>Model confidence in this prediction:</b>
-            {result['confidence']:.1f}%
-
             </div>
             """,
             unsafe_allow_html=True,
@@ -248,8 +249,6 @@ with tab_clinical:
         • Estimated dementia probability: **{result['risk']:.1f}%**
 
         • Predicted class: **{result['label']}**
-
-        • Model confidence: **{result['confidence']:.1f}%**
 
         The probability represents the model's estimate based on patients
         with similar clinical characteristics in the training data.
@@ -289,9 +288,14 @@ with tab_clinical:
         st.subheader("Limitations")
 
         st.warning(
-        """
+        f"""
         This prototype was trained on approximately **370 MRI visits** from the
         OASIS longitudinal dataset.
+
+        **Model accuracy (not this patient's result):** in cross-validated testing
+        that keeps each patient's repeat visits entirely on one side of the split,
+        this model correctly classifies **{CLINICAL_METRICS['accuracy']}%** of
+        cases (AUC {CLINICAL_METRICS['roc_auc']}%).
 
         The model should be interpreted as a clinical decision-support tool rather
         than a diagnostic system.

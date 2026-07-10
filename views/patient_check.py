@@ -3,7 +3,7 @@ import streamlit as st
 from utils.gauge import render_risk_gauge
 from utils.report import RECOMMENDATIONS
 from utils.shap_chart import render_shap_breakdown
-from src.predict_lifestyle import predict_lifestyle
+from src.predict_lifestyle import MODEL_METRICS, predict_lifestyle
 
 st.markdown("<div class='bg-section'>Dementia Risk Check</div>", unsafe_allow_html=True)
 st.write("Answer a few questions about your lifestyle to see your estimated dementia risk.")
@@ -34,13 +34,12 @@ if st.button("Check My Risk", type="primary"):
 
 if "patient_result" in st.session_state:
     result = st.session_state["patient_result"]
-    risk_percent = result["confidence"] if result["label"] == "High Risk" else 100 - result["confidence"]
     st.plotly_chart(
-        render_risk_gauge(risk_percent, "Estimated dementia risk"),
+        render_risk_gauge(result["risk"], "Estimated dementia risk"),
         width="stretch",
         theme=None,
     )
-    st.caption(f"Model prediction: **{result['label']}** ({result['confidence']:.1f}% confidence)")
+    st.caption(f"Model prediction: **{result['label']}**")
     st.info(RECOMMENDATIONS.get(result["label"], ""))
 
     if result["label"] == "High Risk":
@@ -67,6 +66,17 @@ if "patient_result" in st.session_state:
         "research dataset (not a large clinical trial). Individual results can "
         "vary, and this tool cannot replace a qualified physician's judgment."
     )
+
+    with st.expander("How reliable is this model, generally?"):
+        st.write(
+            f"In cross-validated testing, this model distinguishes higher-risk from "
+            f"lower-risk profiles with an **AUC of {MODEL_METRICS['roc_auc']}%** "
+            f"(50% = random guessing, 100% = perfect separation). Raw accuracy isn't "
+            f"a meaningful number here — High Risk cases are rare in the training "
+            f"data (about 1 in 20), so a model that always guessed \"Low Risk\" would "
+            f"score misleadingly high on accuracy alone. This is a general statement "
+            f"about the model, not a statement about your specific result above."
+        )
 
     st.markdown("---")
     st.subheader("Why did the model make this prediction?")

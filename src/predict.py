@@ -22,9 +22,20 @@ def _load_threshold():
         return json.load(f)["threshold"]
 
 
+@st.cache_resource
+def _load_metrics():
+    # Group-aware cross-validated accuracy/AUC, computed separately from
+    # training (see models/clinical_metrics.json) -- classes here are
+    # roughly balanced (190 vs 183), so plain accuracy is a fair headline
+    # number, unlike the lifestyle model.
+    with open("models/clinical_metrics.json") as f:
+        return json.load(f)
+
+
 model = _load_model()
 explainer = _load_explainer()
 DECISION_THRESHOLD = _load_threshold()
+MODEL_METRICS = _load_metrics()
 
 
 FEATURE_DESCRIPTIONS = {

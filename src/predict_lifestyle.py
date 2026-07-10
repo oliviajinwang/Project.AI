@@ -21,9 +21,21 @@ def _load_threshold():
         return json.load(f)["threshold"]
 
 
+@st.cache_resource
+def _load_metrics():
+    # Cross-validated accuracy/AUC, computed separately from training (see
+    # models/lifestyle_metrics.json). High Risk cases are only ~4.6% of the
+    # training data, so raw accuracy is misleadingly high here (a model
+    # that always guesses Low Risk would score similarly) -- AUC is the
+    # metric that actually reflects how well this model discriminates risk.
+    with open("models/lifestyle_metrics.json") as f:
+        return json.load(f)
+
+
 model = _load_model()
 explainer = _load_explainer()
 DECISION_THRESHOLD = _load_threshold()
+MODEL_METRICS = _load_metrics()
 
 
 FEATURE_DESCRIPTIONS = {
