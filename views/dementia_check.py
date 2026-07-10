@@ -85,9 +85,24 @@ with tab_lifestyle:
             st.write(f"**{row['feature']}** — {direction}\n\n{row['text']}")
 
         if selected_patient_id is not None:
-            if st.button("Save to Patient Record", key="save_lifestyle"):
-                update_assessment(selected_patient_id, "Lifestyle", result["fields"], result["label"], result["confidence"])
-                st.success("Saved to patient record.")
+            if st.session_state.get("confirm_save_lifestyle_id") != selected_patient_id:
+                if st.button("Save to Patient Record", key="save_lifestyle"):
+                    st.session_state.confirm_save_lifestyle_id = selected_patient_id
+                    st.rerun()
+            else:
+                st.warning(f"This will overwrite the saved assessment for **{selected_label}**.")
+                confirm_col, cancel_col = st.columns(2)
+                with confirm_col:
+                    if st.button("Confirm Save", key="confirm_save_lifestyle", type="primary"):
+                        update_assessment(
+                            selected_patient_id, "Lifestyle", result["fields"], result["label"], result["confidence"]
+                        )
+                        st.session_state.pop("confirm_save_lifestyle_id", None)
+                        st.success("Saved to patient record.")
+                with cancel_col:
+                    if st.button("Cancel", key="cancel_save_lifestyle"):
+                        st.session_state.pop("confirm_save_lifestyle_id", None)
+                        st.rerun()
         else:
             st.caption("Select a registered patient above to save this result.")
 
