@@ -95,7 +95,22 @@ else:
     st.subheader("Delete a Patient")
     delete_options = {f"{display_id(r['id'])} - {r['full_name']}": int(r["id"]) for _, r in results.iterrows()}
     delete_label = st.selectbox("Select patient to delete", list(delete_options.keys()), key="delete_select")
-    if st.button("Delete Patient", type="primary"):
-        delete_patient(delete_options[delete_label])
-        st.success("Patient deleted.")
-        st.rerun()
+    delete_id = delete_options[delete_label]
+
+    if st.session_state.get("confirm_delete_id") != delete_id:
+        if st.button("Delete Patient", type="primary"):
+            st.session_state.confirm_delete_id = delete_id
+            st.rerun()
+    else:
+        st.error(f"This will permanently delete **{delete_label}** and cannot be undone.")
+        confirm_col, cancel_col = st.columns(2)
+        with confirm_col:
+            if st.button("Confirm Delete", type="primary", key="confirm_delete_btn"):
+                delete_patient(delete_id)
+                st.session_state.pop("confirm_delete_id", None)
+                st.success("Patient deleted.")
+                st.rerun()
+        with cancel_col:
+            if st.button("Cancel", key="cancel_delete_btn"):
+                st.session_state.pop("confirm_delete_id", None)
+                st.rerun()
