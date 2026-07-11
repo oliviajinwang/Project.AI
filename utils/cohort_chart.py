@@ -3,12 +3,12 @@ import plotly.graph_objects as go
 
 # Reuses the same validated status/muted tokens already used across
 # utils/shap_chart.py and views/dashboard.py -- no new palette introduced.
-COLOR_MUTED = "#898781"
-COLOR_HIGH_RISK = "#d03b3b"
-COLOR_LOW_RISK = "#098009"
-COLOR_WARNING = "#F0A500"
-AXIS_INK = "#2E2A47"
-GRIDLINE = "#c9c7c0"
+COLOR_MUTED = "#8B94A3"
+COLOR_HIGH_RISK = "#B33A3A"
+COLOR_LOW_RISK = "#1E7A4C"
+COLOR_WARNING = "#B8892B"
+AXIS_INK = "#13203A"
+GRIDLINE = "#D5DCE3"
 
 PATIENT_LABEL_COLORS = {
     "Nondemented": COLOR_LOW_RISK,

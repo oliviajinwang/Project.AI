@@ -24,7 +24,7 @@ if not st.session_state.get("_models_preloaded", False):
 
 st.session_state.setdefault("role", None)
 st.session_state.setdefault("clinic_authenticated", False)
-st.session_state.setdefault("show_about", False)
+st.session_state.setdefault("show_role_select", False)
 st.session_state.setdefault("_switching", None)
 st.session_state.setdefault("selected_patient", None)
 st.session_state.setdefault("selected_patient_id", None)
@@ -69,11 +69,11 @@ if st.session_state.role is None or (
     hide_sidebar()
 
 if st.session_state.role is None:
-    if st.session_state.show_about:
-        nav = st.navigation([st.Page("views/about.py", title="About")], position="hidden")
+    if st.session_state.show_role_select:
+        nav = st.navigation([st.Page("views/role_select.py", title="Select Role")], position="hidden")
         nav.run()
     else:
-        nav = st.navigation([st.Page("views/role_select.py", title="Welcome")], position="hidden")
+        nav = st.navigation([st.Page("views/welcome.py", title="Welcome")], position="hidden")
         nav.run()
 
 elif st.session_state.role == "patient":

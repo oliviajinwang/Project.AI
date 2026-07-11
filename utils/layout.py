@@ -2,26 +2,30 @@ import streamlit as st
 
 _CSS = """
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500&family=JetBrains+Mono:wght@500;600&display=swap');
+
 :root {
-    --brand: #4a3aa7;
-    --brand-hover: #3a2d86;
-    --brand-blue: #1c68c4;
-    --brand-blue-hover: #15559f;
-    --brand-yellow: #F0A500;
-    --bg-page: #F5F5F7;
+    --brand: #1C3D5A;
+    --brand-hover: #142B40;
+    --brand-blue: #4A7BA6;
+    --brand-blue-hover: #3A6488;
+    --brand-yellow: #B8892B;
+    --bg-page: #F5F7FA;
     --bg-card: #FFFFFF;
-    --bg-muted: #F5F5F7;
-    --border: rgba(0,0,0,0.12);
-    --shadow-sm: 0 1px 2px rgba(0,0,0,0.06);
-    --shadow-md: 0 4px 16px rgba(0,0,0,0.10);
-    --ink-primary: #000000;
-    --ink-secondary: #3D3D42;
-    --ink-muted: #63636B;
-    --good: #098009;
-    --critical: #d03b3b;
-    --radius-lg: 14px;
-    --radius-md: 8px;
-    --radius-sm: 6px;
+    --bg-muted: #EDF1F5;
+    --border: rgba(20, 40, 65, 0.12);
+    --shadow-sm: 0 1px 2px rgba(20, 40, 65, 0.06);
+    --shadow-md: 0 8px 24px rgba(20, 40, 65, 0.14);
+    --ink-primary: #13203A;
+    --ink-secondary: #445068;
+    --ink-muted: #7A879C;
+    --good: #1E7A4C;
+    --critical: #B33A3A;
+    --radius-lg: 16px;
+    --radius-md: 10px;
+    --radius-sm: 999px;
+    --font-serif: 'Fraunces', Georgia, serif;
+    --font-mono: 'JetBrains Mono', 'Courier New', monospace;
 }
 
 #MainMenu { visibility: hidden; }
@@ -39,6 +43,7 @@ footer { visibility: hidden; }
 
 .stApp h1, .stApp h2, .stApp h3, .stApp h4, .stApp h5, .stApp h6 {
     color: var(--ink-primary);
+    font-family: var(--font-serif);
 }
 
 .block-container {
@@ -61,11 +66,12 @@ section[data-testid="stSidebar"] * {
 /* Typography */
 .bg-title {
     text-align: left;
-    font-size: 30px;
-    font-weight: 700;
+    font-family: var(--font-serif);
+    font-size: 34px;
+    font-weight: 600;
     letter-spacing: -0.01em;
     color: var(--ink-primary);
-    padding-bottom: 6px;
+    padding-bottom: 8px;
     border-bottom: 1px solid var(--border);
     margin-bottom: 4px;
 }
@@ -78,12 +84,13 @@ section[data-testid="stSidebar"] * {
 }
 
 .bg-section {
-    font-size: 19px;
-    font-weight: 700;
+    font-family: var(--font-serif);
+    font-size: 23px;
+    font-weight: 600;
     color: var(--ink-primary);
     margin-top: 20px;
     margin-bottom: 10px;
-    padding-bottom: 6px;
+    padding-bottom: 8px;
     border-bottom: 1px solid var(--border);
 }
 
@@ -95,17 +102,18 @@ section[data-testid="stSidebar"] * {
 }
 
 .bg-footer h3 {
-    font-size: 15px;
-    font-weight: 700;
+    font-family: var(--font-serif);
+    font-size: 17px;
+    font-weight: 600;
     color: var(--brand);
 }
 
-/* Buttons */
+/* Buttons -- pill-shaped, matching the reference's rounded CTAs */
 .stButton > button,
 .stDownloadButton > button,
 .stFormSubmitButton > button {
     width: 100%;
-    height: 42px;
+    height: 44px;
     border-radius: var(--radius-sm);
     font-weight: 600;
     background: var(--brand);
@@ -150,10 +158,11 @@ div[data-testid="stMetric"] {
 }
 div[data-testid="stMetricLabel"], div[data-testid="stMetricLabel"] * {
     color: var(--ink-muted) !important;
+    font-family: var(--font-mono);
     font-weight: 600;
     text-transform: uppercase;
-    font-size: 12px;
-    letter-spacing: 0.03em;
+    font-size: 11px;
+    letter-spacing: 0.04em;
 }
 div[data-testid="stMetricValue"], div[data-testid="stMetricValue"] * {
     color: var(--ink-primary) !important;
@@ -184,9 +193,10 @@ div[data-testid="stDataFrame"] {
     display: inline-block;
     padding: 4px 12px;
     border-radius: 999px;
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: 0.04em;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
     text-transform: uppercase;
     color: white !important;
 }
@@ -195,7 +205,7 @@ div[data-testid="stDataFrame"] {
    against the card, instead of a filled button blending into the page */
 .st-key-patient_cta button, .st-key-clinic_cta button {
     background: white;
-    border: 2px solid var(--brand);
+    border: 1.5px solid var(--brand);
 }
 .st-key-patient_cta button p, .st-key-patient_cta button span, .st-key-patient_cta button div,
 .st-key-clinic_cta button p, .st-key-clinic_cta button span, .st-key-clinic_cta button div {
@@ -211,8 +221,8 @@ div[data-testid="stDataFrame"] {
 
 .accent-bar {
     display: block;
-    height: 4px;
-    width: 48px;
+    height: 3px;
+    width: 40px;
     border-radius: 999px;
     margin-bottom: 12px;
 }
@@ -221,15 +231,17 @@ div[data-testid="stDataFrame"] {
 
 .tag {
     display: inline-block;
-    padding: 3px 10px;
+    padding: 4px 12px;
     border-radius: 999px;
-    font-size: 12px;
-    font-weight: 700;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.03em;
     margin: 4px 0 8px 0;
 }
 .tag-yellow {
-    background: var(--brand-yellow);
-    color: #000000;
+    background: rgba(184, 137, 43, 0.14);
+    color: var(--brand-yellow);
 }
 
 hr {

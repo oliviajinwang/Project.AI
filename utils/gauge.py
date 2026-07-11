@@ -1,9 +1,11 @@
 import plotly.graph_objects as go
 
-_GREEN = "#e5f6e5"
-_YELLOW = "#fff4e0"
-_RED = "#fbe4e4"
-_NEUTRAL = "#f0f0f0"
+_GREEN = "#E2EFE7"
+_YELLOW = "#F3E9D6"
+_RED = "#F5E1E1"
+_NEUTRAL = "#EDF1F5"
+_INK = "#13203A"
+_BAR = "#1C3D5A"
 
 
 def _high_risk_midpoint(high_risk_threshold: float) -> float:
@@ -26,7 +28,7 @@ def _finalize(fig: go.Figure) -> go.Figure:
         height=280,
         margin=dict(l=20, r=20, t=50, b=20),
         paper_bgcolor="rgba(0,0,0,0)",
-        font=dict(color="#1A1A2E"),
+        font=dict(color=_INK),
     )
     return fig
 
@@ -55,11 +57,11 @@ def render_risk_gauge(
         go.Indicator(
             mode="gauge+number",
             value=risk_percent,
-            number={"suffix": "%", "font": {"color": "#1A1A2E"}},
-            title={"text": subtitle, "font": {"color": "#1A1A2E"}},
+            number={"suffix": "%", "font": {"color": _INK}},
+            title={"text": subtitle, "font": {"color": _INK}},
             gauge={
-                "axis": {"range": [0, 100], "tickcolor": "#1A1A2E", "tickfont": {"color": "#1A1A2E"}},
-                "bar": {"color": "#4a3aa7"},
+                "axis": {"range": [0, 100], "tickcolor": _INK, "tickfont": {"color": _INK}},
+                "bar": {"color": _BAR},
                 "steps": [
                     {"range": [0, high_risk_threshold], "color": _GREEN},
                     {"range": [high_risk_threshold, midpoint], "color": _YELLOW},
@@ -93,10 +95,10 @@ def render_class_gauge(risk_percent: float, subtitle: str, color: str) -> go.Fig
         go.Indicator(
             mode="gauge+number",
             value=risk_percent,
-            number={"suffix": "%", "font": {"color": "#1A1A2E"}},
-            title={"text": subtitle, "font": {"color": "#1A1A2E"}},
+            number={"suffix": "%", "font": {"color": _INK}},
+            title={"text": subtitle, "font": {"color": _INK}},
             gauge={
-                "axis": {"range": [0, 100], "tickcolor": "#1A1A2E", "tickfont": {"color": "#1A1A2E"}},
+                "axis": {"range": [0, 100], "tickcolor": _INK, "tickfont": {"color": _INK}},
                 "bar": {"color": color},
                 "steps": [
                     {"range": [0, 100], "color": _NEUTRAL},

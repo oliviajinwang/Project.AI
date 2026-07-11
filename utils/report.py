@@ -29,7 +29,7 @@ def _build_qr_image(payload: str):
     qr = qrcode.QRCode(box_size=6, border=2)
     qr.add_data(payload)
     qr.make(fit=True)
-    return qr.make_image(fill_color="#4a3aa7", back_color="white")
+    return qr.make_image(fill_color="#1C3D5A", back_color="white")
 
 
 def build_pdf_report(patient: dict) -> bytes:
@@ -42,14 +42,14 @@ def build_pdf_report(patient: dict) -> bytes:
     pdf.add_page()
 
     pdf.set_font("Helvetica", "B", 20)
-    pdf.set_text_color(75, 63, 114)
+    pdf.set_text_color(28, 61, 90)
     pdf.cell(0, 12, "BrainGuard AI - Medical Report", new_x="LMARGIN", new_y="NEXT", align="C")
     pdf.set_font("Helvetica", "", 11)
     pdf.set_text_color(100, 100, 100)
     pdf.cell(0, 8, "AI-assisted dementia risk assessment", new_x="LMARGIN", new_y="NEXT", align="C")
     pdf.ln(6)
 
-    pdf.set_draw_color(75, 63, 114)
+    pdf.set_draw_color(28, 61, 90)
     pdf.line(10, pdf.get_y(), 200, pdf.get_y())
     pdf.ln(6)
 

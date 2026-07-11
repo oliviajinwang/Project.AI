@@ -8,14 +8,14 @@ from utils.db import HIGH_RISK_LABELS, LOW_RISK_LABELS, display_id, fetch_all_pa
 from utils.layout import render_footer
 
 # Status palette (fixed, never themed) + validated categorical/sequential steps.
-COLOR_GOOD = "#098009"
-COLOR_CRITICAL = "#d03b3b"
-COLOR_MUTED = "#898781"
-COLOR_CATEGORICAL_1 = "#2a78d6"
-COLOR_CATEGORICAL_2 = "#1baf7a"
-AGE_ORDINAL_RAMP = ["#86b6ef", "#6da7ec", "#5598e7", "#2a78d6", "#1c5cab", "#104281"]
-GRIDLINE = "#c9c7c0"
-AXIS_INK = "#2E2A47"
+COLOR_GOOD = "#1E7A4C"
+COLOR_CRITICAL = "#B33A3A"
+COLOR_MUTED = "#8B94A3"
+COLOR_CATEGORICAL_1 = "#2E6DA4"
+COLOR_CATEGORICAL_2 = "#B8892B"
+AGE_ORDINAL_RAMP = ["#C2D4E3", "#9FBAD3", "#7CA0C3", "#5686AA", "#355F82", "#1C3D5A"]
+GRIDLINE = "#D5DCE3"
+AXIS_INK = "#13203A"
 
 df = fetch_all_patients()
 

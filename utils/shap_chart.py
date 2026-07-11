@@ -1,8 +1,8 @@
 import pandas as pd
 import plotly.graph_objects as go
 
-COLOR_INCREASE = "#d03b3b"
-COLOR_DECREASE = "#098009"
+COLOR_INCREASE = "#B33A3A"
+COLOR_DECREASE = "#1E7A4C"
 
 
 def render_shap_breakdown(importance: pd.DataFrame, top_n: int = 5) -> go.Figure:
@@ -28,7 +28,7 @@ def render_shap_breakdown(importance: pd.DataFrame, top_n: int = 5) -> go.Figure
         )
     )
 
-    fig.add_vline(x=0, line_color="#999999", line_width=1)
+    fig.add_vline(x=0, line_color="#A6B0BF", line_width=1)
 
     fig.update_layout(
         title="Top factors driving this prediction",
@@ -37,7 +37,7 @@ def render_shap_breakdown(importance: pd.DataFrame, top_n: int = 5) -> go.Figure
         margin=dict(l=10, r=80, t=50, b=40),
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
-        font=dict(color="#1A1A2E"),
+        font=dict(color="#13203A"),
         showlegend=False,
         yaxis=dict(automargin=True),
         xaxis=dict(automargin=True),

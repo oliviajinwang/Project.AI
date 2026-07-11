@@ -22,9 +22,9 @@ LACUNE_COUNT_OPTIONS = {"None": 0, "1-2": 1, "3-5": 2, "More than 5": 3}
 def _load_structural_cohort() -> pd.DataFrame:
     return pd.read_csv("data/clinician_view_data/clinician_mri_clean.csv")
 
-COLOR_GOOD = "#098009"
-COLOR_CRITICAL = "#d03b3b"
-COLOR_WARNING = "#F0A500"
+COLOR_GOOD = "#1E7A4C"
+COLOR_CRITICAL = "#B33A3A"
+COLOR_WARNING = "#B8892B"
 STRUCTURAL_LABEL_COLORS = {
     "Nondemented": COLOR_GOOD,
     "Demented": COLOR_CRITICAL,
