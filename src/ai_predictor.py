@@ -10,14 +10,9 @@ from sklearn.model_selection import GroupShuffleSplit
 from sklearn.metrics import classification_report, accuracy_score
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import precision_score, recall_score, f1_score
-from sklearn.metrics import roc_auc_score, precision_recall_curve
-from sklearn.model_selection import cross_val_score, cross_val_predict, StratifiedGroupKFold
+from sklearn.metrics import roc_auc_score
+from sklearn.model_selection import cross_val_score, StratifiedGroupKFold
 from sklearn.calibration import CalibratedClassifierCV
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
-from sklearn.calibration import CalibrationDisplay
-from sklearn.metrics import RocCurveDisplay
 
 def train_pure_clinical_model(clean_data_path):
     print("🤖 Loading pre-cleaned numeric dataset...")
@@ -46,8 +41,7 @@ def train_pure_clinical_model(clean_data_path):
     train_idx, test_idx = next(gss.split(X, y, groups=groups))
     X_train, X_test = X.iloc[train_idx], X.iloc[test_idx]
     y_train, y_test = y.iloc[train_idx], y.iloc[test_idx]
-    groups_train = groups.iloc[train_idx]
-    
+
     print(f"📊 Training Matrix Size: {X_train.shape[0]} patients")
     print(f"📊 Testing Matrix Size: {X_test.shape[0]} patients")
     
@@ -55,14 +49,14 @@ def train_pure_clinical_model(clean_data_path):
     print("🏋️ Fitting XGBoost Multi-Class Framework...")
 
     base_model = xgb.XGBClassifier(
-        objective="binary:logistic",
-        eval_metric="logloss",
+        objective="multi:softprob",
+        num_class=3,
+        eval_metric="mlogloss",
         n_estimators=200,
         learning_rate=0.03,
         max_depth=3,
         subsample=0.8,
         colsample_bytree=0.7,
-        scale_pos_weight=1.5,  # Heuristically forces the model to prioritize the positive class
         reg_alpha=0.1,          # Added regularization
         reg_lambda=1.0,         # Added regularization
         random_state=42
@@ -128,48 +122,14 @@ def train_pure_clinical_model(clean_data_path):
         f"Std Dev: {scores.std():.3f}"
     )
 
-    # Tune the decision threshold on out-of-fold predictions instead of
-    # guessing (0.35 was a reasonable instinct — a missed "Demented" case
-    # is worse than a false alarm here — but a guessed constant doesn't
-    # generalize, and critically was never persisted for the live app to
-    # actually use). F2 weights recall over precision.
-    print("\nTuning decision threshold via out-of-fold predictions...")
-    oof_probs = cross_val_predict(
-        CalibratedClassifierCV(
-            xgb.XGBClassifier(
-                objective="binary:logistic",
-                eval_metric="logloss",
-                n_estimators=200,
-                learning_rate=0.03,
-                max_depth=3,
-                subsample=0.8,
-                colsample_bytree=0.7,
-                scale_pos_weight=1.5,
-                reg_alpha=0.1,
-                reg_lambda=1.0,
-                random_state=42,
-            ),
-            method="isotonic",
-            cv=5,
-        ),
-        X_train,
-        y_train,
-        groups=groups_train,
-        cv=StratifiedGroupKFold(n_splits=5, shuffle=True, random_state=42),
-        method="predict_proba",
-        n_jobs=-1,
-    )[:, 1]
-
-    beta = 2
-    precisions, recalls, thresholds = precision_recall_curve(y_train, oof_probs)
-    f_beta = (1 + beta**2) * precisions * recalls / (beta**2 * precisions + recalls + 1e-9)
-    best_idx = int(np.argmax(f_beta[:-1]))
-    custom_threshold = float(thresholds[best_idx])
-    print(f"Chosen threshold: {custom_threshold:.3f} (out-of-fold F2={f_beta[best_idx]:.3f})")
-
+    # Three-way classification (Nondemented / Demented / Converted) has no
+    # single "positive class" decision threshold to tune the way the old
+    # binary model did (that F2/precision-recall-curve approach only makes
+    # sense for one positive class vs. the rest). Predict whichever class
+    # has the highest calibrated probability instead (argmax) -- the
+    # standard approach for multi-class problems.
     y_prob = model.predict_proba(X_test)
-    positive_probabilities = y_prob[:, 1]
-    y_pred = (positive_probabilities >= custom_threshold).astype(int)
+    y_pred = np.argmax(y_prob, axis=1)
 
     print("\nFirst 10 probability predictions:")
 
@@ -200,67 +160,50 @@ def train_pure_clinical_model(clean_data_path):
     print("Unique true labels:", np.unique(y_test))
     print("Unique predicted labels:", np.unique(y_pred))
     print(df["dementia_status"].value_counts())
-    print(classification_report(y_test, y_pred, labels=[0, 1], target_names=['Nondemented (0)', 'Demented (1)'], zero_division=0))
+    class_names = ['Nondemented (0)', 'Demented (1)', 'Converted (2)']
+    print(classification_report(y_test, y_pred, labels=[0, 1, 2], target_names=class_names, zero_division=0))
 
-    CalibrationDisplay.from_predictions(
-        y_test,
-        y_prob[:,1],
-        n_bins=3
-    )
-
-    plt.title("Calibration Curve")
-    plt.show()
-
-
-    # Confusion Matrix for further insight into model performance
-    print("\nConfusion Matrix")
-    cm = confusion_matrix(y_test, y_pred)
-
+    # Confusion Matrix for further insight into model performance. A 3x3
+    # matrix has no single tn/fp/fn/tp breakdown the way a binary one does
+    # -- the per-class precision/recall above already covers that.
+    print("\nConfusion Matrix (rows = true class, columns = predicted class)")
+    print("Order: Nondemented (0), Demented (1), Converted (2)")
+    cm = confusion_matrix(y_test, y_pred, labels=[0, 1, 2])
     print(cm)
 
-    tn, fp, fn, tp = cm.ravel()
-
-    print(f"\nTrue Negatives : {tn}")
-    print(f"False Positives: {fp}")
-    print(f"False Negatives: {fn}")
-    print(f"True Positives : {tp}")
-
-    # Metrics for model evaluation
-    print("\nKey Metrics")
+    # Metrics for model evaluation. Macro-averaged so the rare "Converted"
+    # class (37 of 373 rows) isn't washed out by the two larger classes.
+    print("\nKey Metrics (macro-averaged across all 3 classes)")
     print(f"Accuracy : {accuracy_score(y_test, y_pred):.3f}")
-    print(f"Precision: {precision_score(y_test, y_pred):.3f}")
-    print(f"Recall   : {recall_score(y_test, y_pred):.3f}")
-    print(f"F1 Score : {f1_score(y_test, y_pred):.3f}")
+    print(f"Precision: {precision_score(y_test, y_pred, average='macro', zero_division=0):.3f}")
+    print(f"Recall   : {recall_score(y_test, y_pred, average='macro', zero_division=0):.3f}")
+    print(f"F1 Score : {f1_score(y_test, y_pred, average='macro', zero_division=0):.3f}")
 
-    # Calculate ROC-AUC for binary classification
-    auc = roc_auc_score(y_test, y_prob[:,1])
-
-    print(f"\nROC-AUC: {auc:.3f}")
-    
-    RocCurveDisplay.from_predictions(
-        y_test,
-        y_prob[:,1]
-    )
-
-    plt.title("ROC Curve")
-    plt.show()
+    # One-vs-rest ROC-AUC, macro-averaged across the 3 classes.
+    auc = roc_auc_score(y_test, y_prob, multi_class="ovr", average="macro", labels=[0, 1, 2])
+    print(f"\nMacro ROC-AUC (one-vs-rest): {auc:.3f}")
 
     # 5. Build Tree-Based SHAP Structure
     print("🔍 Pre-computing SHAP Explainer objects...")
     explainer = shap.TreeExplainer(base_model)
-    
+
     # 6. Export Binary Assets to the Team Folder
     os.makedirs("models", exist_ok=True)
     print("💾 Dumping pickled objects to /models directory...")
-    
+
     joblib.dump(model, "models/clinician_model.pkl")
     joblib.dump(explainer, "models/clinician_shap_explainer.pkl")
 
     # Export a test schema reference row for Person 3's pipeline matching
     X_test.head(1).to_csv("models/clinical_sample_input.csv", index=False)
 
-    with open("models/clinical_threshold.json", "w") as f:
-        json.dump({"threshold": custom_threshold}, f)
+    macro_f1 = f1_score(y_test, y_pred, average='macro', zero_division=0)
+    with open("models/clinical_metrics.json", "w") as f:
+        json.dump({
+            "accuracy": round(accuracy_score(y_test, y_pred) * 100, 1),
+            "roc_auc": round(auc * 100, 1),
+            "macro_f1": round(macro_f1 * 100, 1),
+        }, f)
 
     print("🎉 Production assets ready for UI population!")
 

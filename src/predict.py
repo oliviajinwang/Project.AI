@@ -17,25 +17,21 @@ def _load_explainer():
 
 
 @st.cache_resource
-def _load_threshold():
-    with open("models/clinical_threshold.json") as f:
-        return json.load(f)["threshold"]
-
-
-@st.cache_resource
 def _load_metrics():
-    # Group-aware cross-validated accuracy/AUC, computed separately from
-    # training (see models/clinical_metrics.json) -- classes here are
-    # roughly balanced (190 vs 183), so plain accuracy is a fair headline
-    # number, unlike the lifestyle model.
+    # Group-aware cross-validated accuracy/macro-F1/AUC, computed separately
+    # from training (see models/clinical_metrics.json). This is a 3-class
+    # problem (Nondemented / Demented / Converted) with a rare third class
+    # (37 of 373 rows) -- accuracy alone can look fine while the model still
+    # does poorly on Converted, which is why macro_f1 is also tracked.
     with open("models/clinical_metrics.json") as f:
         return json.load(f)
 
 
 model = _load_model()
 explainer = _load_explainer()
-DECISION_THRESHOLD = _load_threshold()
 MODEL_METRICS = _load_metrics()
+
+CLASS_LABELS = {0: "Nondemented", 1: "Demented", 2: "Converted"}
 
 
 FEATURE_DESCRIPTIONS = {
@@ -173,31 +169,30 @@ def predict_patient(patient_dict):
 
     patient = pd.DataFrame([patient_dict])
 
-
-    # Probabilities
+    # Probabilities across all 3 classes (Nondemented / Demented / Converted)
     probabilities = model.predict_proba(patient)[0]
 
-    # Prediction (tuned decision threshold, not the default 0.5)
-    prediction = int(probabilities[1] >= DECISION_THRESHOLD)
+    # Predict whichever class has the highest calibrated probability --
+    # there's no single binary decision threshold for a 3-class problem.
+    prediction = int(np.argmax(probabilities))
+    label = CLASS_LABELS[prediction]
 
-    dementia_risk = float(probabilities[1] * 100)
+    # "Risk" stays a single headline number even with 3 classes: probability
+    # of ANY dementia-related outcome (Demented or Converted), i.e. 1 minus
+    # the probability of Nondemented.
+    dementia_risk = float((1 - probabilities[0]) * 100)
+    confidence = float(probabilities[prediction] * 100)
 
-    if prediction == 1:
-        label = "Demented"
-        confidence = dementia_risk
-    else:
-        label = "Nondemented"
-        confidence = 100 - dementia_risk
-
-    # SHAP
-
+    # SHAP -- values shape is (1, n_features, n_classes) for a multi-class
+    # model. Explain the class that was actually predicted, not class 0.
     shap_values = explainer(patient)
+    predicted_class_shap = shap_values.values[0][:, prediction]
     explanation_rows = []
 
     for feature, value, impact in zip(
         patient.columns,
         patient.iloc[0],
-        shap_values.values[0]
+        predicted_class_shap
     ):
 
         explanation_rows.append(

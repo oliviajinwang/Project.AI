@@ -31,15 +31,14 @@ def clean_clinician_dataset(file_path, output_path="clinician_mri_clean.csv"):
     df_filtered.rename(columns=schema_mapping, inplace=True)
     
     # 3. Handle Target Variable (dementia_status)
-    # In OASIS, 'Converted' subjects transition over time. We classify based on their current clinical state.
-    # To fix potential data inconsistency, we map explicitly to binary targets: Nondemented -> 0, Demented -> 1
-    # If 'Converted', we look at their MMSE/Context or classify them as 1 for early-stage tracking, 
-    # but the cleanest split is converting 'Converted' to 1 (Demented at some point) or dropping if ambiguous.
-    # Here, we treat 'Demented' and 'Converted' as positive screening outcomes (1).
+    # Three distinct clinical states, matching the original OASIS 'Group'
+    # labels exactly rather than collapsing 'Converted' (patients who
+    # transitioned during the study) into 'Demented' -- that transition is
+    # itself clinically meaningful and worth predicting as its own class.
     df_filtered['dementia_status'] = df_filtered['dementia_status'].map({
-        'Nondemented': 0, 
-        'Demented': 1, 
-        'Converted': 1
+        'Nondemented': 0,
+        'Demented': 1,
+        'Converted': 2
     })
     
     # 4. Encode Categorical Features
@@ -52,7 +51,7 @@ def clean_clinician_dataset(file_path, output_path="clinician_mri_clean.csv"):
     # SES (Socioeconomic Status) is heavily tied to education years (EDUC). 
     # Instead of a global median, we impute SES using the median score of people with the same education level.
     df_filtered['socioeconomic_status'] = df_filtered.groupby('education_years')['socioeconomic_status'].transform(
-        lambda x: x.fillna(x.median() if not x.median() else 3.0) # Fallback to 3 if group is empty
+        lambda x: x.fillna(x.median() if pd.notna(x.median()) else 3.0) # Fallback to 3 if group is empty
     )
     
     # For MMSE (Mini-Mental State Exam), if any are missing, impute with the median score based on dementia status.

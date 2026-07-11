@@ -1,2 +1,2 @@
 gender_male,age,education_years,socioeconomic_status,mmse_score,estimated_intracranial_volume,normalized_whole_brain_volume,atlas_scaling_factor
-1,84,18,1.0,29.0,1668,0.694,1.052
+0,81,12,4.0,30.0,1230,0.715,1.427
