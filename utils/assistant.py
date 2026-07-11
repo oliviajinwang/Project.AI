@@ -53,8 +53,9 @@ FAQ_RULES = [
     (
         ["is my data private", "privacy", "is this confidential", "who sees my data"],
         "Quick Risk Check results aren't saved anywhere unless you're specifically working "
-        "with clinic staff who register you as a patient. This chat isn't stored beyond your "
-        "current session either.",
+        "with clinic staff who register you as a patient. This chat stays in your current "
+        "session unless you link it to a Patient ID — then clinic staff can review it under "
+        "that patient's Patient AI Conversation page.",
     ),
     (
         ["who made this", "about this app", "what is brainguard"],

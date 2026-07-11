@@ -56,6 +56,7 @@ if st.session_state._switching == "commit":
     st.session_state.patient_record = None
     st.session_state.patient_record_id = None
     st.session_state.assistant_messages = []
+    st.session_state.assistant_patient_id = None
     st.session_state.history_last_selection = None
     st.session_state.reload_patient_record = True
     st.session_state._switching = None
@@ -109,6 +110,17 @@ elif st.session_state.role == "clinic":
                 visibility="hidden",
             ),
         ]
+        # Only after a patient is selected from History / Detail does this
+        # review page appear in the sidebar — and it always loads that
+        # patient's own conversation history.
+        if st.session_state.get("selected_patient_id"):
+            pages.append(
+                st.Page(
+                    "views/patient_ai_conversation.py",
+                    title="Patient AI Conversation",
+                    url_path="patient-ai-conversation",
+                )
+            )
         nav = st.navigation(pages)
         st.button("Log Out / Switch Role", on_click=_start_switch_role, key="switch_role_btn")
         nav.run()

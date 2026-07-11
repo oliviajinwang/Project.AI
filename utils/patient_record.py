@@ -22,6 +22,8 @@ def default_clinical_sections() -> dict[str, Any]:
         "appointments": [],
         "reminders": [],
         "follow_up_plans": [],
+        # Patient↔AI chat turns, persisted per patient ID for clinic review.
+        "ai_conversation": [],
     }
 
 
