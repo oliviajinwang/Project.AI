@@ -55,6 +55,7 @@ if st.session_state._switching == "commit":
     st.session_state.selected_patient_record = None
     st.session_state.patient_record = None
     st.session_state.patient_record_id = None
+    st.session_state.assistant_messages = []
     st.session_state.history_last_selection = None
     st.session_state.reload_patient_record = True
     st.session_state._switching = None
@@ -82,6 +83,7 @@ elif st.session_state.role == "patient":
     pages = [
         st.Page("views/patient_check.py", title="Quick Risk Check", default=True),
         st.Page("views/register_patient.py", title="Register Patient"),
+        st.Page("views/assistant.py", title="Ask BrainGuard AI"),
     ]
     nav = st.navigation(pages)
     st.button("Switch Role", on_click=_start_switch_role, key="switch_role_btn")
