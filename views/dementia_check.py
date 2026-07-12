@@ -237,19 +237,29 @@ with tab_cognitive:
     with cg_col2:
         st.markdown("### Cognitive & Microvascular Measurements")
         cg_ef = st.number_input(
-            "Executive Function Z-score (EF)", -5.0, 3.0, 0.0, step=0.1, key="cg_ef"
+            "Executive Function Z-score (EF)", -5.0, 3.0, 0.0, step=0.1, key="cg_ef",
+            help="A standardized score for planning, decision-making, and self-control "
+            "skills. 0 = average for the patient's age group; negative values mean "
+            "below-average performance.",
         )
         cg_ps = st.number_input(
-            "Processing Speed Z-score (PS)", -3.0, 3.0, 0.0, step=0.1, key="cg_ps"
+            "Processing Speed Z-score (PS)", -3.0, 3.0, 0.0, step=0.1, key="cg_ps",
+            help="A standardized score for how quickly the brain processes information. "
+            "0 = average for the patient's age group; negative values mean slower "
+            "processing.",
         )
         cg_global = st.number_input(
             "Global Cognitive Z-score", -3.0, 2.0, 0.0, step=0.1, key="cg_global"
         )
         cg_fazekas = st.slider(
-            "Fazekas Score (white matter hyperintensity, 0-3)", 0, 3, 0, key="cg_fazekas"
+            "Fazekas Score (white matter hyperintensity, 0-3)", 0, 3, 0, key="cg_fazekas",
+            help="A 0-3 rating (from MRI) of white-matter changes -- a marker of "
+            "small-vessel brain disease. 0 = none visible, 3 = most severe.",
         )
         cg_lacune_label = st.selectbox(
-            "Lacune Count", list(LACUNE_COUNT_OPTIONS.keys()), key="cg_lacune"
+            "Lacune Count", list(LACUNE_COUNT_OPTIONS.keys()), key="cg_lacune",
+            help="The number of lacunes -- small fluid-filled cavities seen on MRI, "
+            "usually from tiny strokes affecting small, deep blood vessels.",
         )
 
     if st.button("Run Cognitive Assessment", type="primary", key="run_cognitive"):
@@ -400,7 +410,10 @@ with tab_structural:
             "Normalized Whole Brain Volume (nWBV)",
             0.5,
             0.9,
-            0.72
+            0.72,
+            help="Brain volume as a fraction of total intracranial volume, adjusted for "
+            "head size. Lower values mean more brain tissue loss (atrophy), which tends "
+            "to increase with age and neurodegeneration.",
         )
 
         cl_asf = st.number_input(
