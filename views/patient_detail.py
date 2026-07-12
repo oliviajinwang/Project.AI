@@ -1,9 +1,15 @@
 from datetime import date, datetime
 
+import plotly.graph_objects as go
 import streamlit as st
 
+from utils.db import get_assessment_history
 from utils.risk_profile import render_shared_risk_profile_fields
 from utils.patient_record import ensure_patient_record, parse_iso_date, save_patient_record_session
+
+AXIS_INK = "#13203A"
+GRIDLINE = "#D5DCE3"
+COLOR_LINE = "#2E6DA4"
 
 _EHR_CSS = """
 <style>
@@ -72,6 +78,49 @@ def _render_overview_sidebar(record: dict) -> None:
             f"<span class='ehr-badge'>Risk</span> {overview['prediction_label']}"
             f"<br><span class='ehr-badge'>Confidence</span> {overview['confidence']:.0f}%",
             unsafe_allow_html=True,
+        )
+
+
+def _render_risk_trend(patient_db_id: int) -> None:
+    with _card("Risk Trend"):
+        history = get_assessment_history(patient_db_id)
+        history = history[history["risk_percent"].notna()]
+        if history.empty:
+            st.caption(
+                "No assessment history yet -- each time a Lifestyle or Cognitive "
+                "assessment is saved from Dementia Check, it's added here so you "
+                "can see whether this patient's risk is trending up or down."
+            )
+            return
+
+        fig = go.Figure()
+        for assessment_type, group in history.groupby("assessment_type"):
+            fig.add_trace(
+                go.Scatter(
+                    x=group["recorded_at"],
+                    y=group["risk_percent"],
+                    mode="lines+markers",
+                    name=assessment_type,
+                    line=dict(width=2),
+                    marker=dict(size=8),
+                    hovertemplate="%{x}<br>Risk: %{y:.1f}%<extra>" + assessment_type + "</extra>",
+                )
+            )
+        fig.update_layout(
+            height=260,
+            margin=dict(l=10, r=10, t=10, b=10),
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+            font=dict(color=AXIS_INK),
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
+            xaxis=dict(title="Assessment date", gridcolor=GRIDLINE, tickfont=dict(color=AXIS_INK), automargin=True),
+            yaxis=dict(title="Estimated risk (%)", gridcolor=GRIDLINE, tickfont=dict(color=AXIS_INK), automargin=True, rangemode="tozero"),
+        )
+        st.plotly_chart(fig, width="stretch", theme=None)
+        st.caption(
+            "Each point is a saved assessment from Dementia Check. Rising risk "
+            "across visits may warrant closer follow-up; falling risk may reflect "
+            "improvement in modifiable factors."
         )
 
 
@@ -352,6 +401,7 @@ with left_col:
     _render_allergies_sidebar(record)
 
 with main_col:
+    _render_risk_trend(record["patient_db_id"])
     _render_medical_history(record)
     _render_dementia_assessments(record)
     _render_previous_visits(record)

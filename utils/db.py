@@ -1,6 +1,9 @@
+import hashlib
+import hmac
 import json
+import secrets
 import sqlite3
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
 from typing import Any
 
@@ -44,6 +47,32 @@ CREATE TABLE IF NOT EXISTS patients (
 )
 """
 
+_CLINICIANS_SCHEMA = """
+CREATE TABLE IF NOT EXISTS clinicians (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT NOT NULL UNIQUE,
+    display_name TEXT,
+    password_hash TEXT NOT NULL,
+    password_salt TEXT NOT NULL,
+    created_at TEXT
+)
+"""
+
+_ASSESSMENT_HISTORY_SCHEMA = """
+CREATE TABLE IF NOT EXISTS assessment_history (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    patient_id INTEGER NOT NULL,
+    assessment_type TEXT,
+    prediction_label TEXT,
+    confidence REAL,
+    risk_percent REAL,
+    recorded_at TEXT,
+    recorded_by TEXT
+)
+"""
+
+_PBKDF2_ITERATIONS = 200_000
+
 
 def get_connection() -> sqlite3.Connection:
     conn = sqlite3.connect(DB_PATH)
@@ -55,14 +84,58 @@ def _ensure_extended_record_column(conn: sqlite3.Connection) -> None:
     columns = {row[1] for row in conn.execute("PRAGMA table_info(patients)")}
     if "extended_record" not in columns:
         conn.execute("ALTER TABLE patients ADD COLUMN extended_record TEXT")
+    if "last_modified_by" not in columns:
+        conn.execute("ALTER TABLE patients ADD COLUMN last_modified_by TEXT")
+    if "last_modified_at" not in columns:
+        conn.execute("ALTER TABLE patients ADD COLUMN last_modified_at TEXT")
 
 
 def init_db() -> None:
     conn = get_connection()
     conn.execute(_SCHEMA)
+    conn.execute(_CLINICIANS_SCHEMA)
+    conn.execute(_ASSESSMENT_HISTORY_SCHEMA)
     _ensure_extended_record_column(conn)
     conn.commit()
     conn.close()
+
+
+def hash_password(password: str, salt: str | None = None) -> tuple[str, str]:
+    salt = salt or secrets.token_hex(16)
+    digest = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), bytes.fromhex(salt), _PBKDF2_ITERATIONS)
+    return digest.hex(), salt
+
+
+def create_clinician(username: str, password: str, display_name: str) -> bool:
+    """Returns False if the username is already taken."""
+    conn = get_connection()
+    existing = conn.execute("SELECT 1 FROM clinicians WHERE username = ?", (username.lower(),)).fetchone()
+    if existing:
+        conn.close()
+        return False
+
+    password_hash, salt = hash_password(password)
+    conn.execute(
+        "INSERT INTO clinicians (username, display_name, password_hash, password_salt, created_at) "
+        "VALUES (?, ?, ?, ?, ?)",
+        (username.lower(), display_name.strip() or username, password_hash, salt, datetime.now().isoformat()),
+    )
+    conn.commit()
+    conn.close()
+    return True
+
+
+def verify_clinician(username: str, password: str) -> dict | None:
+    conn = get_connection()
+    row = conn.execute("SELECT * FROM clinicians WHERE username = ?", (username.lower().strip(),)).fetchone()
+    conn.close()
+    if not row:
+        return None
+
+    computed_hash, _ = hash_password(password, salt=row["password_salt"])
+    if not hmac.compare_digest(computed_hash, row["password_hash"]):
+        return None
+    return dict(row)
 
 
 def _build_extended_record(patient_id: int, data: dict[str, Any]) -> dict[str, Any]:
@@ -111,21 +184,53 @@ def insert_patient(data: dict) -> int:
     return patient_id
 
 
-def update_assessment(patient_id: int, assessment_type: str, fields: dict, prediction_label: str, confidence: float) -> None:
+def update_assessment(
+    patient_id: int,
+    assessment_type: str,
+    fields: dict,
+    prediction_label: str,
+    confidence: float,
+    risk_percent: float | None = None,
+    modified_by: str | None = None,
+) -> None:
+    now = datetime.now().isoformat()
     conn = get_connection()
-    columns = list(fields.keys()) + ["assessment_type", "prediction_label", "confidence"]
+    columns = list(fields.keys()) + [
+        "assessment_type", "prediction_label", "confidence", "last_modified_by", "last_modified_at",
+    ]
     set_clause = ", ".join(f"{col} = :{col}" for col in columns)
     params = {
         **fields,
         "assessment_type": assessment_type,
         "prediction_label": prediction_label,
         "confidence": confidence,
+        "last_modified_by": modified_by,
+        "last_modified_at": now,
         "id": patient_id,
     }
     conn.execute(f"UPDATE patients SET {set_clause} WHERE id = :id", params)
+    conn.execute(
+        "INSERT INTO assessment_history "
+        "(patient_id, assessment_type, prediction_label, confidence, risk_percent, recorded_at, recorded_by) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?)",
+        (patient_id, assessment_type, prediction_label, confidence, risk_percent, now, modified_by),
+    )
     conn.commit()
     conn.close()
     fetch_all_patients.clear()
+    get_assessment_history.clear()
+
+
+@st.cache_data
+def get_assessment_history(patient_id: int) -> pd.DataFrame:
+    conn = get_connection()
+    df = pd.read_sql_query(
+        "SELECT * FROM assessment_history WHERE patient_id = ? ORDER BY recorded_at ASC",
+        conn,
+        params=(patient_id,),
+    )
+    conn.close()
+    return df
 
 
 @st.cache_data
@@ -192,7 +297,7 @@ def load_patient_record(patient_id: int) -> dict[str, Any]:
     return _apply_row_to_record(row, record)
 
 
-def save_patient_record(patient_id: int, record: dict[str, Any]) -> None:
+def save_patient_record(patient_id: int, record: dict[str, Any], modified_by: str | None = None) -> None:
     overview = record["overview"]
     risk = record["risk_profile"]
 
@@ -202,7 +307,8 @@ def save_patient_record(patient_id: int, record: dict[str, Any]) -> None:
            full_name = ?, gender = ?, age = ?, assessment_type = ?,
            prediction_label = ?, confidence = ?, registration_date = ?,
            education_years = ?, diabetes = ?, hypertension = ?,
-           high_cholesterol = ?, smoking = ?, extended_record = ?
+           high_cholesterol = ?, smoking = ?, extended_record = ?,
+           last_modified_by = ?, last_modified_at = ?
            WHERE id = ?""",
         (
             overview["name"],
@@ -218,6 +324,8 @@ def save_patient_record(patient_id: int, record: dict[str, Any]) -> None:
             int(bool(risk.get("high_cholesterol"))),
             int(bool(risk.get("smoking"))),
             json.dumps(record),
+            modified_by,
+            datetime.now().isoformat(),
             patient_id,
         ),
     )

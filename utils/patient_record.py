@@ -92,7 +92,7 @@ def save_patient_record_session(record: dict[str, Any]) -> int:
     from utils.db import save_patient_record
 
     patient_id = int(record.get("patient_db_id") or st.session_state.get("selected_patient_id"))
-    save_patient_record(patient_id, record)
+    save_patient_record(patient_id, record, modified_by=st.session_state.get("clinic_user"))
     st.session_state.patient_record = record
     st.session_state.patient_record_id = patient_id
     st.session_state.selected_patient_record = record

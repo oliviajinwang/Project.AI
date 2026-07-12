@@ -206,7 +206,8 @@ with tab_lifestyle:
                 with confirm_col:
                     if st.button("Confirm Save", key="confirm_save_lifestyle", type="primary"):
                         update_assessment(
-                            selected_patient_id, "Lifestyle", result["fields"], result["label"], result["confidence"]
+                            selected_patient_id, "Lifestyle", result["fields"], result["label"], result["confidence"],
+                            risk_percent=result["risk"], modified_by=st.session_state.get("clinic_user"),
                         )
                         st.session_state.pop("confirm_save_lifestyle_id", None)
                         st.success("Saved to patient record.")
@@ -316,7 +317,8 @@ with tab_cognitive:
                 with confirm_col:
                     if st.button("Confirm Save", key="confirm_save_cognitive", type="primary"):
                         update_assessment(
-                            selected_patient_id, "Cognitive", result["fields"], result["label"], result["confidence"]
+                            selected_patient_id, "Cognitive", result["fields"], result["label"], result["confidence"],
+                            risk_percent=result["risk"], modified_by=st.session_state.get("clinic_user"),
                         )
                         st.session_state.pop("confirm_save_cognitive_id", None)
                         st.success("Saved to patient record.")

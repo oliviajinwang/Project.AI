@@ -24,6 +24,8 @@ if not st.session_state.get("_models_preloaded", False):
 
 st.session_state.setdefault("role", None)
 st.session_state.setdefault("clinic_authenticated", False)
+st.session_state.setdefault("clinic_user", None)
+st.session_state.setdefault("clinic_display_name", None)
 st.session_state.setdefault("show_role_select", False)
 st.session_state.setdefault("_switching", None)
 st.session_state.setdefault("selected_patient", None)
@@ -50,6 +52,8 @@ if st.session_state._switching == "overlay":
 if st.session_state._switching == "commit":
     st.session_state.role = None
     st.session_state.clinic_authenticated = False
+    st.session_state.clinic_user = None
+    st.session_state.clinic_display_name = None
     st.session_state.selected_patient = None
     st.session_state.selected_patient_id = None
     st.session_state.selected_patient_record = None
@@ -95,6 +99,7 @@ elif st.session_state.role == "clinic":
         nav.run()
     else:
         st.sidebar.markdown("### Clinic Portal")
+        st.sidebar.caption(f"Logged in as **{st.session_state.clinic_display_name or st.session_state.clinic_user}**")
         st.sidebar.markdown("---")
 
         pages = [
