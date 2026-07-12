@@ -8,7 +8,6 @@ from utils.gauge import CLASS_GAUGE_LEGEND, render_class_gauge, render_risk_gaug
 from utils.report import RECOMMENDATIONS
 from utils.shap_chart import render_shap_breakdown
 from src.predict import MODEL_METRICS as CLINICAL_METRICS, predict_patient
-from src.predict_cognitive import DECISION_THRESHOLD as COGNITIVE_THRESHOLD, MODEL_METRICS as COGNITIVE_METRICS, predict_cognitive
 from src.predict_lifestyle import (
     DECISION_THRESHOLD as LIFESTYLE_THRESHOLD,
     MAX_REACHABLE_RISK as LIFESTYLE_MAX_REACHABLE_RISK,
@@ -16,7 +15,6 @@ from src.predict_lifestyle import (
     predict_lifestyle,
 )
 
-LACUNE_COUNT_OPTIONS = {"None": 0, "1-2": 1, "3-5": 2, "More than 5": 3}
 
 
 @st.cache_data
@@ -47,8 +45,8 @@ selected_label = st.selectbox("Patient", list(patient_options.keys()))
 selected_patient_id = patient_options[selected_label]
 
 
-tab_lifestyle, tab_cognitive, tab_structural = st.tabs(
-    ["Lifestyle Assessment", "Cognitive & Microvascular", "Structural Neuroimaging"]
+tab_lifestyle, tab_structural = st.tabs(
+    ["Lifestyle Assessment", "Structural Neuroimaging"]
 )
 
 with tab_lifestyle:
@@ -217,144 +215,6 @@ with tab_lifestyle:
                 with cancel_col:
                     if st.button("Cancel", key="cancel_save_lifestyle"):
                         st.session_state.pop("confirm_save_lifestyle_id", None)
-                        st.rerun()
-        else:
-            st.caption("Select a registered patient above to save this result.")
-
-with tab_cognitive:
-    st.caption(
-        "Cognitive testing and small-vessel-disease markers used by the trained AI model."
-    )
-
-    cg_col1, cg_col2 = st.columns(2)
-
-    with cg_col1:
-        st.markdown("### Patient Information")
-        cg_age = st.slider("Age", 40, 100, 70, key="cg_age")
-        cg_gender = st.selectbox("Gender", ["Female", "Male"], key="cg_gender")
-        cg_education = st.slider("Years of Education", 0, 25, 12, key="cg_edu")
-
-    with cg_col2:
-        st.markdown("### Cognitive & Microvascular Measurements")
-        cg_ef = st.number_input(
-            "Executive Function Z-score (EF)", -5.0, 3.0, 0.0, step=0.1, key="cg_ef",
-            help="A standardized score for planning, decision-making, and self-control "
-            "skills. 0 = average for the patient's age group; negative values mean "
-            "below-average performance.",
-        )
-        cg_ps = st.number_input(
-            "Processing Speed Z-score (PS)", -3.0, 3.0, 0.0, step=0.1, key="cg_ps",
-            help="A standardized score for how quickly the brain processes information. "
-            "0 = average for the patient's age group; negative values mean slower "
-            "processing.",
-        )
-        cg_global = st.number_input(
-            "Global Cognitive Z-score", -3.0, 2.0, 0.0, step=0.1, key="cg_global"
-        )
-        cg_fazekas = st.slider(
-            "Fazekas Score (white matter hyperintensity, 0-3)", 0, 3, 0, key="cg_fazekas",
-            help="A 0-3 rating (from MRI) of white-matter changes -- a marker of "
-            "small-vessel brain disease. 0 = none visible, 3 = most severe.",
-        )
-        cg_lacune_label = st.selectbox(
-            "Lacune Count", list(LACUNE_COUNT_OPTIONS.keys()), key="cg_lacune",
-            help="The number of lacunes -- small fluid-filled cavities seen on MRI, "
-            "usually from tiny strokes affecting small, deep blood vessels.",
-        )
-
-    if st.button("Run Cognitive Assessment", type="primary", key="run_cognitive"):
-        patient = {
-            "age": cg_age,
-            "gender_male": int(cg_gender == "Male"),
-            "education_years": cg_education,
-            "ef": cg_ef,
-            "ps": cg_ps,
-            "global_cognitive": cg_global,
-            "fazekas": cg_fazekas,
-            "lacune_count": LACUNE_COUNT_OPTIONS[cg_lacune_label],
-        }
-
-        result = predict_cognitive(patient)
-        result["fields"] = {
-            "age": cg_age,
-            "education_years": cg_education,
-            "ef": cg_ef,
-            "ps": cg_ps,
-            "global_cognitive": cg_global,
-            "fazekas": cg_fazekas,
-            "lacune_count": LACUNE_COUNT_OPTIONS[cg_lacune_label],
-        }
-
-        st.session_state["cognitive_result"] = result
-
-    if "cognitive_result" in st.session_state:
-        result = st.session_state["cognitive_result"]
-        cognitive_threshold_pct = COGNITIVE_THRESHOLD * 100
-        st.plotly_chart(
-            render_risk_gauge(result["risk"], "Estimated dementia risk", high_risk_threshold=cognitive_threshold_pct),
-            width="stretch",
-            theme=None,
-        )
-        st.caption(f"{threshold_gauge_legend(cognitive_threshold_pct)}  ·  Model prediction: **{result['label']}**")
-        st.info(RECOMMENDATIONS.get(result["label"], ""))
-
-        st.subheader("Why did the model make this prediction?")
-        st.plotly_chart(
-            render_shap_breakdown(result["importance"], top_n=5),
-            width="stretch",
-            theme=None,
-        )
-        for _, row in result["importance"].head(5).iterrows():
-            direction = "Increased risk" if row["impact"] > 0 else "Reduced risk"
-            st.write(f"**{row['feature']}** — {direction}\n\n{row['text']}")
-
-        st.markdown("---")
-        st.subheader("Your Personalized Action Plan")
-        cg_top_risk_factors = result["importance"][result["importance"]["impact"] > 0].head(3)
-        if cg_top_risk_factors.empty:
-            st.caption("None of this patient's cognitive/imaging measurements are currently increasing the estimated risk.")
-        else:
-            st.caption(
-                "Unlike the Lifestyle model, these measurements (cognitive test scores, "
-                "white-matter and lacune findings) aren't things a patient can directly "
-                "change -- so instead of a what-if simulation, here's what's worth "
-                "raising with a physician."
-            )
-            for _, row in cg_top_risk_factors.iterrows():
-                with st.container(border=True):
-                    st.markdown(f"**{row['feature']}**")
-                    st.write(f"{row['text']} Worth discussing with a physician, alongside a full cognitive workup.")
-
-        st.markdown("---")
-        st.subheader("Model confidence rating")
-        st.write(f"**Model confidence:** {COGNITIVE_METRICS['roc_auc']}%")
-        st.caption(
-            f"Not this patient's result -- in cross-validated testing this model "
-            f"separates higher- from lower-risk profiles with an AUC of "
-            f"{COGNITIVE_METRICS['roc_auc']}% (50% = random, 100% = perfect). Raw "
-            f"accuracy isn't shown here -- High Risk cases are rare in the training "
-            f"data, so accuracy alone would be misleading."
-        )
-
-        if selected_patient_id is not None:
-            if st.session_state.get("confirm_save_cognitive_id") != selected_patient_id:
-                if st.button("Save to Patient Record", key="save_cognitive"):
-                    st.session_state.confirm_save_cognitive_id = selected_patient_id
-                    st.rerun()
-            else:
-                st.warning(f"This will overwrite the saved assessment for **{selected_label}**.")
-                confirm_col, cancel_col = st.columns(2)
-                with confirm_col:
-                    if st.button("Confirm Save", key="confirm_save_cognitive", type="primary"):
-                        update_assessment(
-                            selected_patient_id, "Cognitive", result["fields"], result["label"], result["confidence"],
-                            risk_percent=result["risk"], modified_by=st.session_state.get("clinic_user"),
-                        )
-                        st.session_state.pop("confirm_save_cognitive_id", None)
-                        st.success("Saved to patient record.")
-                with cancel_col:
-                    if st.button("Cancel", key="cancel_save_cognitive"):
-                        st.session_state.pop("confirm_save_cognitive_id", None)
                         st.rerun()
         else:
             st.caption("Select a registered patient above to save this result.")

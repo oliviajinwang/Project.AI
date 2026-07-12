@@ -7,6 +7,7 @@ __pycache__/
 
 # Streamlit local secrets (config.toml IS tracked - shared theme)
 .streamlit/secrets.toml
+.env
 
 # Mac system junk files
 .DS_Store

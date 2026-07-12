@@ -392,6 +392,9 @@ with header_right:
     confidence = overview.get("confidence") or 0.0
     st.metric("Confidence", f"{confidence:.0f}%" if confidence else "—")
 
+if st.button("Open Patient AI Conversation", type="secondary"):
+    st.switch_page("views/patient_ai_conversation.py")
+
 left_col, main_col, right_col = st.columns([1.05, 2.1, 1.05], gap="medium")
 
 with left_col:
