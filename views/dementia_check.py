@@ -1,6 +1,7 @@
 import pandas as pd
 import streamlit as st
 
+from utils.action_plan import render_lifestyle_action_plan
 from utils.cohort_chart import render_cohort_scatter
 from utils.db import display_id, fetch_all_patients, update_assessment
 from utils.gauge import CLASS_GAUGE_LEGEND, render_class_gauge, render_risk_gauge, scaled_red_zone_start, threshold_gauge_legend
@@ -184,6 +185,8 @@ with tab_lifestyle:
             direction = "Increased risk" if row["impact"] > 0 else "Reduced risk"
             st.write(f"**{row['feature']}** — {direction}\n\n{row['text']}")
 
+        render_lifestyle_action_plan(result, ls_original_inputs, predict_lifestyle, key_prefix="ls_")
+
         st.markdown("---")
         st.subheader("Model confidence rating")
         st.write(f"**Model confidence:** {LIFESTYLE_METRICS['roc_auc']}%")
@@ -294,6 +297,23 @@ with tab_cognitive:
         for _, row in result["importance"].head(5).iterrows():
             direction = "Increased risk" if row["impact"] > 0 else "Reduced risk"
             st.write(f"**{row['feature']}** — {direction}\n\n{row['text']}")
+
+        st.markdown("---")
+        st.subheader("Your Personalized Action Plan")
+        cg_top_risk_factors = result["importance"][result["importance"]["impact"] > 0].head(3)
+        if cg_top_risk_factors.empty:
+            st.caption("None of this patient's cognitive/imaging measurements are currently increasing the estimated risk.")
+        else:
+            st.caption(
+                "Unlike the Lifestyle model, these measurements (cognitive test scores, "
+                "white-matter and lacune findings) aren't things a patient can directly "
+                "change -- so instead of a what-if simulation, here's what's worth "
+                "raising with a physician."
+            )
+            for _, row in cg_top_risk_factors.iterrows():
+                with st.container(border=True):
+                    st.markdown(f"**{row['feature']}**")
+                    st.write(f"{row['text']} Worth discussing with a physician, alongside a full cognitive workup.")
 
         st.markdown("---")
         st.subheader("Model confidence rating")

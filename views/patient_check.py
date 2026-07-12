@@ -1,5 +1,6 @@
 import streamlit as st
 
+from utils.action_plan import render_lifestyle_action_plan
 from utils.gauge import render_risk_gauge, scaled_red_zone_start, threshold_gauge_legend
 from utils.report import RECOMMENDATIONS
 from utils.shap_chart import render_shap_breakdown
@@ -154,6 +155,8 @@ if "patient_result" in st.session_state:
     for _, row in result["importance"].head(5).iterrows():
         direction = "Increased risk" if row["impact"] > 0 else "Reduced risk"
         st.write(f"**{row['feature']}** — {direction}\n\n{row['text']}")
+
+    render_lifestyle_action_plan(result, st.session_state["patient_inputs"], predict_lifestyle)
 
     st.markdown("---")
     st.subheader("Model confidence rating")
