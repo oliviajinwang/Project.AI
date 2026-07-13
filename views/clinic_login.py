@@ -1,6 +1,25 @@
+import os
+
 import streamlit as st
 
 from utils.db import create_clinician, reset_clinician_password, verify_clinician
+
+# Shared invite code required to create a clinician account, so a public
+# deployment can't have anyone self-register into the full patient dashboard.
+# Read from st.secrets first (set a private one per deployment), then an env
+# var, then a documented default so local dev still works out of the box.
+_DEFAULT_SIGNUP_CODE = "BRAINGUARD-CLINIC"
+
+
+def _clinic_signup_code() -> str:
+    try:
+        value = st.secrets.get("CLINIC_SIGNUP_CODE")
+        if value:
+            return str(value).strip()
+    except Exception:
+        pass
+    return (os.getenv("CLINIC_SIGNUP_CODE") or _DEFAULT_SIGNUP_CODE).strip()
+
 
 st.markdown("<div class='bg-section'>Clinic Access</div>", unsafe_allow_html=True)
 st.warning(
@@ -35,13 +54,22 @@ with tab_login:
 
 with tab_register:
     st.write("New clinicians can create an account here.")
+    st.caption(
+        "Account creation requires a clinic invite code. If you don't have one, "
+        "ask whoever administers this deployment."
+    )
+    reg_signup_code = st.text_input("Clinic invite code", type="password", key="reg_signup_code")
     reg_username = st.text_input("Choose a username", key="reg_username")
     reg_display_name = st.text_input("Display name", key="reg_display_name")
     reg_password = st.text_input("Choose a password", type="password", key="reg_password")
     reg_password_confirm = st.text_input("Confirm password", type="password", key="reg_password_confirm")
 
     if st.button("Create Account", type="primary", key="reg_submit"):
-        if not reg_username.strip() or not reg_password:
+        if not reg_signup_code.strip():
+            st.error("A clinic invite code is required to create an account.")
+        elif reg_signup_code.strip() != _clinic_signup_code():
+            st.error("That clinic invite code is not valid.")
+        elif not reg_username.strip() or not reg_password:
             st.error("Username and password are required.")
         elif len(reg_password) < 8:
             st.error("Password must be at least 8 characters.")
