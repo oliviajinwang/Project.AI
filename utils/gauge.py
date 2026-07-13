@@ -90,6 +90,15 @@ def threshold_gauge_legend(high_risk_threshold: float, red_zone_start: float | N
     )
 
 
+def plain_gauge_legend() -> str:
+    """Layperson version of the gauge legend, without the exact percentage
+    cutoffs -- those are meaningful to clinicians but noise to patients."""
+    return (
+        "Green means lower risk, yellow is borderline, and red is elevated. "
+        "The gauge fills further to the right as the estimated risk rises."
+    )
+
+
 def render_class_gauge(risk_percent: float, subtitle: str, color: str) -> go.Figure:
     """Gauge for the 3-class clinical model (Nondemented/Demented/Converted).
     There's no single threshold to anchor percentage zones to -- the label

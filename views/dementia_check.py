@@ -101,7 +101,8 @@ with tab_lifestyle:
         lifestyle_axis_max = min(100.0, math.ceil(LIFESTYLE_MAX_REACHABLE_RISK / 5) * 5)
 
         render_lifestyle_gauge_and_recommendation(
-            result, lifestyle_threshold_pct, lifestyle_red_zone_start, axis_max=lifestyle_axis_max
+            result, lifestyle_threshold_pct, lifestyle_red_zone_start,
+            axis_max=lifestyle_axis_max, audience="clinician",
         )
         render_lifestyle_interpretation(result, audience="clinician")
 

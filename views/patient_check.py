@@ -60,7 +60,8 @@ if "patient_result" in st.session_state:
     )
 
     render_lifestyle_gauge_and_recommendation(
-        result, lifestyle_threshold_pct, lifestyle_red_zone_start, axis_max=lifestyle_axis_max
+        result, lifestyle_threshold_pct, lifestyle_red_zone_start,
+        axis_max=lifestyle_axis_max, audience="patient",
     )
     render_lifestyle_interpretation(result, audience="patient")
 

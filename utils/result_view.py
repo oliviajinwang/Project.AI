@@ -14,7 +14,7 @@ from typing import Callable, Literal
 
 import streamlit as st
 
-from utils.gauge import render_risk_gauge, threshold_gauge_legend
+from utils.gauge import plain_gauge_legend, render_risk_gauge, threshold_gauge_legend
 from utils.report import RECOMMENDATIONS
 from utils.shap_chart import render_shap_breakdown
 
@@ -26,11 +26,15 @@ def render_lifestyle_gauge_and_recommendation(
     threshold_pct: float,
     red_zone_start: float,
     axis_max: float = 100.0,
+    *,
+    audience: Audience = "clinician",
 ) -> None:
-    """Render the primary lifestyle risk gauge, its threshold-zone legend
-    caption, and the label-specific recommendation box.
+    """Render the primary lifestyle risk gauge, its zone legend caption, and
+    the label-specific recommendation box.
 
-    Identical between the patient and clinician lifestyle views.
+    `audience` selects the legend wording: the patient view gets a plain
+    "green = lower, yellow = borderline, red = elevated" description, while
+    the clinician view keeps the exact percentage cutoffs.
     """
     st.plotly_chart(
         render_risk_gauge(
@@ -41,10 +45,12 @@ def render_lifestyle_gauge_and_recommendation(
         width="stretch",
         theme=None,
     )
-    st.caption(
-        f"{threshold_gauge_legend(threshold_pct, red_zone_start=red_zone_start)}  ·  "
-        f"Model prediction: **{result['label']}**"
+    legend = (
+        plain_gauge_legend()
+        if audience == "patient"
+        else threshold_gauge_legend(threshold_pct, red_zone_start=red_zone_start)
     )
+    st.caption(f"{legend}  ·  Model prediction: **{result['label']}**")
     st.info(RECOMMENDATIONS.get(result["label"], ""))
 
 
