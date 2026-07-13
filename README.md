@@ -22,9 +22,10 @@ BrainGuard AI is an educational and clinical decision-support prototype, not a d
 # Authors
 
 Olivia Wang, Grade 11 (Class of 2028), International Community School, Redmond, WA
-++ everybody add their names here
 
 David Chen, Grade 11 (Class of 2028), Tabor Academy, Marion, MA
+
+Emma Liu
 
 # Video Demonstration
 
