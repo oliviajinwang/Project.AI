@@ -41,6 +41,14 @@ _CSS = """
     --y2k-cyan-glow: rgba(70, 199, 220, 0.35);
     --y2k-silver: #CBD5DA;
     --y2k-silver-dark: #8FA0A8;
+
+    /* Streamlit's own fixed top toolbar (header[data-testid="stHeader"]):
+       the hamburger/"Deploy" menu in local dev, or the Share/star/fork
+       icons Streamlit Cloud renders in the same element once deployed.
+       Measured at 3.75rem (60px) locally; kept as a named constant (not
+       inlined) so the signed-in portal header's own clearance below can
+       be tuned in one place if a hosting environment renders it taller. */
+    --streamlit-header-height: 3.75rem;
 }
 
 #MainMenu { visibility: hidden; }
@@ -309,21 +317,36 @@ hr {
     padding: 15px 3rem;
     background: rgba(252, 250, 246, 0.96);
 }
-/* Streamlit's own fixed top toolbar (the "Deploy"/menu bar rendered by
-   header[data-testid="stHeader"]) is a separate, higher-stacked element
-   that this stylesheet doesn't control. On the signed-in portal, the
-   negative top margin above pulled this header flush with the very top of
-   block-container, which put its top ~44px underneath that native
-   toolbar -- clipping the wordmark and the Home/Switch role controls.
-   position:sticky also never actually engaged here: Chromium does not
-   establish a working sticky containing block through Streamlit's nested
-   flex wrappers between this element and section[data-testid="stMain"]
-   (confirmed by testing a bare position:sticky element in the same DOM
-   slot -- it fails identically), so it was silently behaving as a normal
-   in-flow element already. margin-top now pushes it down to clear the
-   native toolbar instead of relying on sticky/negative-margin. */
+/* header[data-testid="stHeader"] is Streamlit's own fixed top toolbar --
+   the hamburger/"Deploy" menu locally, or the Share/star/fork icons
+   Streamlit Cloud renders in that same element once deployed. It's a
+   separate, much higher-stacked element (z-index 999990) that this
+   stylesheet doesn't control, sitting at the top var(--streamlit-header-
+   height) of the viewport regardless of what block-container does.
+
+   The negative top margin above pulls this header up to sit flush with
+   block-container's own top edge -- which, before this rule, put the
+   header's top edge underneath that native toolbar, clipping the
+   wordmark and the Home/Switch role controls.
+
+   position:sticky was also tried here and doesn't hold up: Chromium does
+   not reliably keep a working sticky containing block through Streamlit's
+   nested flex wrappers between this element and
+   section[data-testid="stMain"] -- confirmed directly by testing a bare
+   position:sticky element in the same DOM slot, and by testing the one
+   documented workaround (forcing the wrapping stVerticalBlock to
+   display:block) across multiple pages: it stuck correctly on some pages
+   but silently scrolled away again on others with more content, since the
+   underlying containing-block resolution differs by page structure.
+   A plain in-flow position with enough top margin to clear the native
+   toolbar is the one placement that's correct on every page regardless of
+   that page's own content/DOM shape, so that's what this uses, with a
+   deliberately generous margin -- comfortably more than
+   var(--streamlit-header-height) alone -- to stay correct even if a
+   hosting environment renders that native toolbar taller than the 60px
+   measured locally. */
 .st-key-portal_header {
-    margin-top: 2rem;
+    margin-top: 3rem;
     position: static;
 }
 .bg-brand { display:flex; align-items:center; color:var(--brand-navy); font-family:var(--font-serif); font-size:22px; font-weight:600; letter-spacing:-0.01em; }
@@ -400,7 +423,7 @@ hr {
     /* Same native-toolbar clearance as the desktop rule above, recalibrated
        for this breakpoint's smaller block-container padding (the sidebar
        also collapses here, which shifts the layout's own baseline offset). */
-    .st-key-portal_header { margin-top: 3rem; }
+    .st-key-portal_header { margin-top: 4rem; }
     .st-key-portal_header [data-testid="stHorizontalBlock"] { gap:.45rem; }
     .bg-current-page { display:none; }
     .bg-header-note { font-size:12px; }
