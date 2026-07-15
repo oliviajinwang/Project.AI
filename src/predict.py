@@ -32,7 +32,16 @@ explainer = _load_explainer()
 MODEL_METRICS = _load_metrics()
 
 CLASS_LABELS = {0: "Nondemented", 1: "Demented", 2: "Converted"}
-
+FEATURE_ORDER = [
+    "gender_male",
+    "age",
+    "education_years",
+    "socioeconomic_status",
+    "mmse_score",
+    "estimated_intracranial_volume",
+    "normalized_whole_brain_volume",
+    "atlas_scaling_factor",
+]
 
 FEATURE_DESCRIPTIONS = {
     "age": "Age",
@@ -167,26 +176,57 @@ def explain_feature(feature, value, shap_value):
 
 def predict_patient(patient_dict):
 
-    patient = pd.DataFrame([patient_dict])
+    patient = pd.DataFrame([patient_dict])[FEATURE_ORDER]
 
-    # Probabilities across all 3 classes (Nondemented / Demented / Converted)
     probabilities = model.predict_proba(patient)[0]
 
-    # Predict whichever class has the highest calibrated probability --
-    # there's no single binary decision threshold for a 3-class problem.
     prediction = int(np.argmax(probabilities))
     label = CLASS_LABELS[prediction]
 
-    # "Risk" stays a single headline number even with 3 classes: probability
-    # of ANY dementia-related outcome (Demented or Converted), i.e. 1 minus
-    # the probability of Nondemented.
     dementia_risk = float((1 - probabilities[0]) * 100)
     confidence = float(probabilities[prediction] * 100)
 
-    # SHAP -- values shape is (1, n_features, n_classes) for a multi-class
-    # model. Explain the class that was actually predicted, not class 0.
     shap_values = explainer(patient)
-    predicted_class_shap = shap_values.values[0][:, prediction]
+    shap_array = np.asarray(shap_values.values)
+
+    if shap_array.ndim == 3:
+        if shap_array.shape[1] == patient.shape[1]:
+            # Shape: samples × features × classes
+            predicted_class_shap = shap_array[0, :, prediction]
+
+        elif shap_array.shape[2] == patient.shape[1]:
+            # Shape: samples × classes × features
+            predicted_class_shap = shap_array[0, prediction, :]
+
+        else:
+            raise ValueError(
+                f"Unexpected SHAP shape: {shap_array.shape}. "
+                f"Expected {patient.shape[1]} features."
+            )
+
+    elif shap_array.ndim == 2:
+        if shap_array.shape[1] != patient.shape[1]:
+            raise ValueError(
+                f"Unexpected SHAP shape: {shap_array.shape}. "
+                f"Expected {patient.shape[1]} features."
+            )
+
+        predicted_class_shap = shap_array[0]
+
+    elif shap_array.ndim == 1:
+        if shap_array.shape[0] != patient.shape[1]:
+            raise ValueError(
+                f"Unexpected SHAP shape: {shap_array.shape}. "
+                f"Expected {patient.shape[1]} features."
+            )
+
+        predicted_class_shap = shap_array
+
+    else:
+        raise ValueError(
+            f"Unsupported SHAP output shape: {shap_array.shape}"
+        )
+
     explanation_rows = []
 
     for feature, value, impact in zip(
@@ -194,30 +234,20 @@ def predict_patient(patient_dict):
         patient.iloc[0],
         predicted_class_shap
     ):
-
         explanation_rows.append(
             explain_feature(
                 feature,
                 value,
-                impact
+                float(impact)
             )
         )
-
 
     explanations = pd.DataFrame(explanation_rows)
     explanations["strength"] = explanations["impact"].abs()
 
-    # strongest influences
-    explanations["abs_impact"] = explanations["impact"].abs()
-    
-
-    explanations = (
-        explanations
-        .sort_values(
-            "abs_impact",
-            ascending=False
-        )
-        .drop(columns=["abs_impact"])
+    explanations = explanations.sort_values(
+        "strength",
+        ascending=False
     )
 
     return {

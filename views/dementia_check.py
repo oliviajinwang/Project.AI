@@ -25,6 +25,10 @@ from src.predict_lifestyle import (
     MODEL_METRICS as LIFESTYLE_METRICS,
     predict_lifestyle,
 )
+macro_f1 = CLINICAL_METRICS.get(
+    "macro_f1",
+    CLINICAL_METRICS.get("f1", "Not available")
+)
 
 @st.cache_data
 def _load_structural_cohort() -> pd.DataFrame:
@@ -416,15 +420,18 @@ with tab_structural:
 
         st.markdown("---")
         st.subheader("Validation performance")
-        st.write(f"**Cross-validated accuracy:** {CLINICAL_METRICS['accuracy']}%")
+
+        st.write(
+            f"**Cross-validated accuracy:** "
+            f"{CLINICAL_METRICS['accuracy']}%"
+        )
+
         st.caption(
             f"Not this patient's result -- in cross-validated testing that keeps "
             f"each patient's repeat visits entirely on one side of the split, this "
             f"model correctly classifies {CLINICAL_METRICS['accuracy']}% of cases "
             f"overall (AUC {CLINICAL_METRICS['roc_auc']}%, macro F1 "
-            f"{CLINICAL_METRICS['macro_f1']}% -- macro F1 is much lower than "
-            f"accuracy here specifically because the model struggles with the "
-            f"rare Converted class)."
+            f"{macro_f1}% -- macro F1 reflects performance across all three classes)."
         )
 
         if selected_patient_id is not None:
