@@ -309,10 +309,22 @@ hr {
     padding: 15px 3rem;
     background: rgba(252, 250, 246, 0.96);
 }
+/* Streamlit's own fixed top toolbar (the "Deploy"/menu bar rendered by
+   header[data-testid="stHeader"]) is a separate, higher-stacked element
+   that this stylesheet doesn't control. On the signed-in portal, the
+   negative top margin above pulled this header flush with the very top of
+   block-container, which put its top ~44px underneath that native
+   toolbar -- clipping the wordmark and the Home/Switch role controls.
+   position:sticky also never actually engaged here: Chromium does not
+   establish a working sticky containing block through Streamlit's nested
+   flex wrappers between this element and section[data-testid="stMain"]
+   (confirmed by testing a bare position:sticky element in the same DOM
+   slot -- it fails identically), so it was silently behaving as a normal
+   in-flow element already. margin-top now pushes it down to clear the
+   native toolbar instead of relying on sticky/negative-margin. */
 .st-key-portal_header {
-    position: sticky;
-    top: 0;
-    z-index: 100;
+    margin-top: 2rem;
+    position: static;
 }
 .bg-brand { display:flex; align-items:center; color:var(--brand-navy); font-family:var(--font-serif); font-size:22px; font-weight:600; letter-spacing:-0.01em; }
 /* Public pages carry a larger wordmark; the signed-in portal header keeps
@@ -385,6 +397,10 @@ hr {
 @media (max-width: 768px) {
     .block-container { padding-left:1rem; padding-right:1rem; padding-top:1rem; }
     .st-key-public_header, .st-key-portal_header { margin:-1rem -1rem 1rem; padding:12px 1rem; }
+    /* Same native-toolbar clearance as the desktop rule above, recalibrated
+       for this breakpoint's smaller block-container padding (the sidebar
+       also collapses here, which shifts the layout's own baseline offset). */
+    .st-key-portal_header { margin-top: 3rem; }
     .st-key-portal_header [data-testid="stHorizontalBlock"] { gap:.45rem; }
     .bg-current-page { display:none; }
     .bg-header-note { font-size:12px; }
