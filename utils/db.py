@@ -80,33 +80,48 @@ def get_connection() -> sqlite3.Connection:
     return conn
 
 
+def _add_column_if_missing(conn: sqlite3.Connection, table: str, column: str, ddl_type: str) -> None:
+    """Idempotent, race-safe ``ALTER TABLE ... ADD COLUMN``.
+
+    Streamlit Cloud can run many reruns/sessions against the same database
+    concurrently, and each one calls init_db() on every script run. Two of
+    them can both pass the "column missing" check below before either
+    finishes its ALTER TABLE, so SQLite raises
+    ``sqlite3.OperationalError: duplicate column name`` for whichever one
+    loses the race. That specific, expected error means the column now
+    exists (the other process just added it) and is safe to ignore; any
+    other OperationalError (a locked database, a genuine schema problem,
+    etc.) is re-raised rather than swallowed.
+    """
+    columns = {row[1] for row in conn.execute(f"PRAGMA table_info({table})")}
+    if column in columns:
+        return
+    try:
+        conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {ddl_type}")
+        conn.commit()
+    except sqlite3.OperationalError as exc:
+        if "duplicate column name" in str(exc).lower():
+            return
+        raise
+
+
 def _ensure_extended_record_column(conn: sqlite3.Connection) -> None:
-    columns = {row[1] for row in conn.execute("PRAGMA table_info(patients)")}
-    if "extended_record" not in columns:
-        conn.execute("ALTER TABLE patients ADD COLUMN extended_record TEXT")
-    if "last_modified_by" not in columns:
-        conn.execute("ALTER TABLE patients ADD COLUMN last_modified_by TEXT")
-    if "last_modified_at" not in columns:
-        conn.execute("ALTER TABLE patients ADD COLUMN last_modified_at TEXT")
-    if "pin_hash" not in columns:
-        conn.execute("ALTER TABLE patients ADD COLUMN pin_hash TEXT")
-    if "pin_salt" not in columns:
-        conn.execute("ALTER TABLE patients ADD COLUMN pin_salt TEXT")
+    _add_column_if_missing(conn, "patients", "extended_record", "TEXT")
+    _add_column_if_missing(conn, "patients", "last_modified_by", "TEXT")
+    _add_column_if_missing(conn, "patients", "last_modified_at", "TEXT")
+    _add_column_if_missing(conn, "patients", "pin_hash", "TEXT")
+    _add_column_if_missing(conn, "patients", "pin_salt", "TEXT")
 
 
 def _ensure_clinician_profile_column(conn: sqlite3.Connection) -> None:
-    columns = {row[1] for row in conn.execute("PRAGMA table_info(clinicians)")}
-    if "profile_json" not in columns:
-        conn.execute("ALTER TABLE clinicians ADD COLUMN profile_json TEXT")
+    _add_column_if_missing(conn, "clinicians", "profile_json", "TEXT")
 
 
 def _ensure_response_source_column(conn: sqlite3.Connection) -> None:
     # Nullable by design: existing assessment_history rows predate this
     # field and must keep loading as-is, displayed as "Not specified"
     # (see utils/response_source.response_source_label).
-    columns = {row[1] for row in conn.execute("PRAGMA table_info(assessment_history)")}
-    if "response_source" not in columns:
-        conn.execute("ALTER TABLE assessment_history ADD COLUMN response_source TEXT")
+    _add_column_if_missing(conn, "assessment_history", "response_source", "TEXT")
 
 
 def init_db() -> None:

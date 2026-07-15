@@ -1,4 +1,5 @@
 import json
+import sqlite3
 
 import pytest
 
@@ -312,3 +313,141 @@ def test_save_patient_record_round_trip_persists_trusted_contact_fields():
     assert reloaded["portal_profile"]["trusted_contact_name"] == "Alex Smith"
     assert reloaded["portal_profile"]["trusted_contact_relationship"] == "Daughter"
     assert reloaded["portal_profile"]["trusted_contact_email_or_phone"] == "alex@example.com"
+
+
+# ---------------------------------------------------------------------------
+# Race-safe schema migration (utils.db._add_column_if_missing and friends).
+# ---------------------------------------------------------------------------
+
+
+class _AlterRaisingConn:
+    """Wraps a real sqlite3 connection but raises a given error on the next
+    ALTER TABLE statement, simulating a concurrent migration by another
+    Streamlit rerun/session that reaches the same ALTER TABLE first."""
+
+    def __init__(self, real_conn: sqlite3.Connection, error: Exception):
+        self._real = real_conn
+        self._error = error
+
+    def execute(self, sql, *args, **kwargs):
+        if sql.strip().upper().startswith("ALTER TABLE"):
+            raise self._error
+        return self._real.execute(sql, *args, **kwargs)
+
+    def commit(self):
+        self._real.commit()
+
+
+def test_init_db_creates_fresh_database_with_response_source_column(tmp_path, monkeypatch):
+    monkeypatch.setattr(db, "DB_PATH", tmp_path / "fresh.db")
+    db.init_db()
+
+    conn = db.get_connection()
+    columns = {row[1] for row in conn.execute("PRAGMA table_info(assessment_history)")}
+    conn.close()
+    assert "response_source" in columns
+
+
+def test_init_db_migrates_legacy_assessment_history_missing_response_source(tmp_path, monkeypatch):
+    # Simulates a database created before this migration existed: an
+    # assessment_history table with the pre-migration column list only.
+    monkeypatch.setattr(db, "DB_PATH", tmp_path / "legacy.db")
+    conn = sqlite3.connect(tmp_path / "legacy.db")
+    conn.execute(
+        """CREATE TABLE assessment_history (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            patient_id INTEGER NOT NULL,
+            assessment_type TEXT,
+            prediction_label TEXT,
+            confidence REAL,
+            risk_percent REAL,
+            recorded_at TEXT,
+            recorded_by TEXT
+        )"""
+    )
+    conn.execute(
+        "INSERT INTO assessment_history "
+        "(patient_id, assessment_type, prediction_label, confidence, risk_percent, recorded_at, recorded_by) "
+        "VALUES (1, 'Lifestyle', 'Low Risk', 60.0, 12.0, '2020-01-01T00:00:00', 'legacy_user')"
+    )
+    conn.commit()
+    conn.close()
+
+    db.init_db()  # must migrate in place without raising
+
+    conn = db.get_connection()
+    columns = {row[1] for row in conn.execute("PRAGMA table_info(assessment_history)")}
+    row = conn.execute("SELECT * FROM assessment_history WHERE patient_id = 1").fetchone()
+    conn.close()
+
+    assert "response_source" in columns
+    # Existing data survives the migration untouched.
+    assert row["recorded_by"] == "legacy_user"
+    assert row["prediction_label"] == "Low Risk"
+    assert row["response_source"] is None
+
+
+def test_init_db_migration_preserves_existing_patient_data(tmp_path, monkeypatch):
+    # Same idea for the patients table's own additive columns
+    # (extended_record, pin_hash, ...), which use the same migration helper.
+    monkeypatch.setattr(db, "DB_PATH", tmp_path / "legacy_patients.db")
+    conn = sqlite3.connect(tmp_path / "legacy_patients.db")
+    conn.execute(
+        """CREATE TABLE patients (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            full_name TEXT NOT NULL,
+            gender TEXT,
+            age INTEGER,
+            prediction_label TEXT,
+            confidence REAL
+        )"""
+    )
+    conn.execute("INSERT INTO patients (full_name, age) VALUES ('Legacy Patient', 82)")
+    conn.commit()
+    conn.close()
+
+    db.init_db()
+
+    conn = db.get_connection()
+    row = conn.execute("SELECT * FROM patients WHERE full_name = 'Legacy Patient'").fetchone()
+    columns = {info[1] for info in conn.execute("PRAGMA table_info(patients)")}
+    conn.close()
+
+    assert row["age"] == 82
+    assert "extended_record" in columns
+    assert "pin_hash" in columns
+
+
+def test_init_db_called_repeatedly_does_not_crash(tmp_path, monkeypatch):
+    monkeypatch.setattr(db, "DB_PATH", tmp_path / "repeat.db")
+    for _ in range(5):
+        db.init_db()
+
+    conn = db.get_connection()
+    columns = {row[1] for row in conn.execute("PRAGMA table_info(assessment_history)")}
+    conn.close()
+    assert "response_source" in columns
+
+
+def test_add_column_if_missing_ignores_duplicate_column_race(tmp_path, monkeypatch):
+    monkeypatch.setattr(db, "DB_PATH", tmp_path / "race.db")
+    db.init_db()
+
+    conn = db.get_connection()
+    # response_source already exists after init_db(), so point at a
+    # not-yet-added column and simulate another process winning the race to
+    # add it first -- SQLite reports this as a duplicate-column error.
+    wrapped = _AlterRaisingConn(conn, sqlite3.OperationalError("duplicate column name: race_col"))
+    db._add_column_if_missing(wrapped, "assessment_history", "race_col", "TEXT")  # must not raise
+    conn.close()
+
+
+def test_add_column_if_missing_reraises_unrelated_operational_error(tmp_path, monkeypatch):
+    monkeypatch.setattr(db, "DB_PATH", tmp_path / "unrelated_error.db")
+    db.init_db()
+
+    conn = db.get_connection()
+    wrapped = _AlterRaisingConn(conn, sqlite3.OperationalError("database is locked"))
+    with pytest.raises(sqlite3.OperationalError, match="database is locked"):
+        db._add_column_if_missing(wrapped, "assessment_history", "another_col", "TEXT")
+    conn.close()
