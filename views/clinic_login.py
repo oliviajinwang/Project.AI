@@ -15,6 +15,7 @@ reset_clinician_password = _db.reset_clinician_password
 verify_clinician = _db.verify_clinician
 
 from utils.i18n import apply_clinician_language, t
+from utils.ui import render_public_header
 
 # Shared invite code required to create a clinician account, so a public
 # deployment can't have anyone self-register into the full patient dashboard.
@@ -33,6 +34,7 @@ def _clinic_signup_code() -> str:
     return (os.getenv("CLINIC_SIGNUP_CODE") or _DEFAULT_SIGNUP_CODE).strip()
 
 
+render_public_header()
 st.markdown(f"<div class='bg-section'>{t('clinic_access')}</div>", unsafe_allow_html=True)
 st.warning(
     "**Demonstration access only.** This clinic portal is a prototype, not a "

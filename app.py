@@ -24,6 +24,7 @@ from utils.i18n import (
     t,
 )
 from utils.layout import hide_sidebar, inject_css  #colors/design
+from utils.ui import render_portal_header, render_skeleton
 
 st.set_page_config(
     page_title="BrainGuard AI",
@@ -42,9 +43,25 @@ inject_css()  # applies the CSS design to the page -- must run before the
               # loaded yet and it will render unstyled.
 
 if not st.session_state.get("_models_preloaded", False):
-    with st.spinner("Loading prediction models..."):
+    # Shimmer placeholder instead of a blank screen for this one-time,
+    # first-load cost (model files are read from disk, not re-downloaded).
+    loading_slot = st.empty()
+    with loading_slot.container():
+        st.caption("Loading prediction models…")
+        render_skeleton(lines=3, key="models")
+    # Each model loads independently so a broken pickle for one model (e.g.
+    # a version-incompatible models/clinician_model.pkl) degrades only the
+    # pages that need it, instead of crashing every page in the app,
+    # including ones -- like the public landing page -- that never touch it.
+    try:
         import src.predict  # noqa: F401
+    except Exception:
+        st.session_state["_clinical_model_error"] = True
+    try:
         import src.predict_lifestyle  # noqa: F401
+    except Exception:
+        st.session_state["_lifestyle_model_error"] = True
+    loading_slot.empty()
     st.session_state["_models_preloaded"] = True
 
 st.session_state.setdefault("role", None)
@@ -151,7 +168,11 @@ elif st.session_state.role == "patient":
         ),
     ]
     nav = st.navigation(pages)
-    st.button(t("switch_role"), on_click=_start_switch_role, key="switch_role_btn")
+    render_portal_header(
+        getattr(nav, "title", t("patient_portal")),
+        "views/patient_check.py",
+        _start_switch_role,
+    )
     nav.run()
 
 elif st.session_state.role == "clinic":
@@ -192,5 +213,9 @@ elif st.session_state.role == "clinic":
             ),
         ]
         nav = st.navigation(pages)
-        st.button(t("switch_role"), on_click=_start_switch_role, key="switch_role_btn")
+        render_portal_header(
+            getattr(nav, "title", t("clinic_portal")),
+            "views/dashboard.py",
+            _start_switch_role,
+        )
         nav.run()

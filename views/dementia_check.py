@@ -29,9 +29,12 @@ from src.predict_lifestyle import (
 def _load_structural_cohort() -> pd.DataFrame:
     return pd.read_csv("data/clinician_view_data/clinician_mri_clean.csv")
 
-COLOR_GOOD = "#1E7A4C"
-COLOR_CRITICAL = "#B33A3A"
-COLOR_WARNING = "#B8892B"
+# Literal mirrors of the CSS theme tokens --good, --critical, --moderate in
+# utils/layout.py (this file builds raw HTML strings, which can't read CSS
+# variables the way the shared stylesheet does).
+COLOR_GOOD = "#256C4C"
+COLOR_CRITICAL = "#A63838"
+COLOR_WARNING = "#8A5A00"
 STRUCTURAL_LABEL_COLORS = {
     "Nondemented": COLOR_GOOD,
     "Demented": COLOR_CRITICAL,
@@ -276,9 +279,9 @@ with tab_structural:
                 padding:24px;
                 border-radius:14px;
                 background:#FFFFFF;
-                border:1px solid rgba(20,16,50,0.09);
+                border:1px solid rgba(16,42,67,0.09);
                 border-left:4px solid {color};
-                box-shadow:0 1px 2px rgba(16,15,40,0.05);
+                box-shadow:0 1px 2px rgba(16,42,67,0.05);
             ">
 
             <span class="risk-badge" style="background:{color};">{result['label']}</span>

@@ -39,12 +39,12 @@ _PROFILE_CSS = """
     font-size: 34px;
     font-weight: 700;
     letter-spacing: -0.02em;
-    color: #13203A;
+    color: var(--ink-primary, #102A43);
     margin: 0 0 0.35rem 0;
 }
 .pp-subtitle {
     font-size: 14px;
-    color: #7A879C;
+    color: var(--ink-muted, #627482);
     margin: 0 0 1.5rem 0;
     line-height: 1.5;
 }
@@ -52,12 +52,12 @@ _PROFILE_CSS = """
     font-family: var(--font-serif, Georgia, serif);
     font-size: 20px;
     font-weight: 600;
-    color: #13203A;
+    color: var(--ink-primary, #102A43);
     margin: 0 0 0.3rem 0;
 }
 .pp-section-caption {
     font-size: 13px;
-    color: #7A879C;
+    color: var(--ink-muted, #627482);
     margin: 0 0 1rem 0;
 }
 div[data-testid="stVerticalBlockBorderWrapper"] {
@@ -82,16 +82,16 @@ div[data-testid="stVerticalBlockBorderWrapper"] {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(145deg, #4A7BA6 0%, #1C3D5A 100%);
+    background: var(--brand-navy, #102A43);
     color: white;
     font-size: 2.1rem;
     font-weight: 700;
-    box-shadow: 0 8px 20px rgba(28, 61, 90, 0.18);
+    box-shadow: 0 8px 20px rgba(16, 42, 67, 0.18);
 }
 .pp-avatar-img {
     object-fit: cover;
-    border: 3px solid rgba(74, 123, 166, 0.22);
-    box-shadow: 0 8px 20px rgba(28, 61, 90, 0.12);
+    border: 3px solid rgba(39, 109, 104, 0.25);
+    box-shadow: 0 8px 20px rgba(16, 42, 67, 0.12);
 }
 .pp-avatar-wrap:hover .pp-avatar,
 .pp-avatar-wrap:hover .pp-avatar-img { transform: scale(1.02); }
@@ -114,8 +114,8 @@ div[data-testid="stVerticalBlockBorderWrapper"] {
     padding: 0 !important;
     border-radius: 50% !important;
     border: 2.5px solid #FFFFFF !important;
-    background: #4A7BA6 !important;
-    box-shadow: 0 4px 12px rgba(28, 61, 90, 0.30) !important;
+    background: var(--brand, #276D68) !important;
+    box-shadow: 0 4px 12px rgba(16, 42, 67, 0.30) !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
@@ -156,12 +156,12 @@ div[data-testid="stVerticalBlockBorderWrapper"] {
     font-family: var(--font-serif, Georgia, serif);
     font-size: 28px;
     font-weight: 700;
-    color: #13203A;
+    color: var(--ink-primary, #102A43);
     margin: 0 0 0.35rem 0;
 }
 .pp-meta {
     font-size: 14px;
-    color: #445068;
+    color: var(--ink-secondary, #3E5668);
     margin: 0 0 0.25rem 0;
 }
 .pp-details {
@@ -178,12 +178,12 @@ div[data-testid="stVerticalBlockBorderWrapper"] {
     font-weight: 700;
     letter-spacing: 0.05em;
     text-transform: uppercase;
-    color: #7A879C;
+    color: var(--ink-muted, #627482);
     margin-bottom: 0.12rem;
 }
 .pp-value {
     font-size: 14px;
-    color: #445068;
+    color: var(--ink-secondary, #3E5668);
     line-height: 1.4;
 }
 .pp-row {
@@ -199,11 +199,11 @@ div[data-testid="stVerticalBlockBorderWrapper"] {
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.03em;
-    color: #7A879C;
+    color: var(--ink-muted, #627482);
 }
 .pp-row .right {
     font-size: 15px;
-    color: #13203A;
+    color: var(--ink-primary, #102A43);
 }
 .pp-health-grid {
     display: grid;
@@ -221,16 +221,16 @@ div[data-testid="stVerticalBlockBorderWrapper"] {
     font-weight: 700;
     letter-spacing: 0.04em;
     text-transform: uppercase;
-    color: #7A879C;
+    color: var(--ink-muted, #627482);
 }
 .pp-badge .v {
     margin-top: 0.35rem;
     font-size: 15px;
     font-weight: 700;
-    color: #13203A;
+    color: var(--ink-primary, #102A43);
 }
-.pp-badge .v.yes { color: #B8892B; }
-.pp-badge .v.no { color: #1E7A4C; }
+.pp-badge .v.yes { color: var(--moderate, #8A5A00); }
+.pp-badge .v.no { color: var(--good, #256C4C); }
 .pp-spacer { height: 1.15rem; }
 .pp-toast {
     position: fixed;
@@ -243,8 +243,8 @@ div[data-testid="stVerticalBlockBorderWrapper"] {
     padding: 0.85rem 1.15rem;
     border-radius: 14px;
     background: #FFFFFF;
-    border: 1px solid rgba(30, 122, 76, 0.22);
-    box-shadow: 0 8px 24px rgba(20, 40, 65, 0.14);
+    border: 1px solid rgba(37, 108, 76, 0.25);
+    box-shadow: 0 8px 24px rgba(16, 42, 67, 0.14);
     font-weight: 700;
     font-size: 14px;
     animation: pp-toast-in 0.3s ease both, pp-toast-out 0.35s ease 2.4s forwards;
@@ -253,7 +253,7 @@ div[data-testid="stVerticalBlockBorderWrapper"] {
     width: 22px;
     height: 22px;
     border-radius: 50%;
-    background: #1E7A4C;
+    background: var(--good, #256C4C);
     color: white;
     display: inline-flex;
     align-items: center;

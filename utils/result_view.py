@@ -10,6 +10,7 @@ session-state reads/writes stay in the calling view.
 
 from __future__ import annotations
 
+from html import escape
 from typing import Callable, Literal
 
 import streamlit as st
@@ -17,8 +18,115 @@ import streamlit as st
 from utils.gauge import plain_gauge_legend, render_risk_gauge, threshold_gauge_legend
 from utils.report import RECOMMENDATIONS
 from utils.shap_chart import render_shap_breakdown
+from utils.ui import render_animated_score, render_status_chip
 
 Audience = Literal["patient", "clinician"]
+
+
+def _lifestyle_summary_text(result: dict, original_inputs: dict, status: str) -> str:
+    """Create a local, user-triggered text summary without saving new data."""
+    factors = []
+    if original_inputs.get("smoking"):
+        factors.append("smoking")
+    if original_inputs.get("hypertension"):
+        factors.append("blood pressure")
+    if original_inputs.get("high_cholesterol"):
+        factors.append("cholesterol")
+    factor_line = ", ".join(factors) if factors else "no quick lifestyle factors flagged in this summary"
+    return (
+        "BrainGuard AI lifestyle screening summary\n"
+        "======================================\n\n"
+        f"Status: {status}\n"
+        f"Model prediction: {result['label']}\n"
+        f"Estimated score: {result['risk']:.1f}%\n\n"
+        "This is a screening estimate, not a diagnosis. It reflects everyday lifestyle "
+        "factors only and does not replace a clinician's evaluation.\n\n"
+        f"Factors to discuss: {factor_line}.\n\n"
+        "Suggested next step: discuss any concerns about memory, thinking, or daily "
+        "functioning with a qualified clinician.\n"
+    )
+
+
+def render_lifestyle_result_summary(result: dict, original_inputs: dict) -> None:
+    """Render the patient-facing result hierarchy before the detailed explainers.
+
+    This adds labels and supporting actions only. It deliberately reuses the
+    existing model label and score without changing their medical meaning.
+    """
+    needs_attention = result["label"] == "High Risk"
+    status = "Needs attention" if needs_attention else "Lower risk"
+    tone = "needs-review" if needs_attention else "stable"
+    explanation = (
+        "This screening flagged lifestyle factors worth discussing with a clinician. "
+        "It does not diagnose dementia."
+        if needs_attention
+        else "This screening did not flag elevated lifestyle-related risk. Keep up "
+        "routine checkups and discuss any new concerns with a clinician."
+    )
+
+    protective = []
+    if not original_inputs.get("smoking"):
+        protective.append("No smoking reported")
+    if not original_inputs.get("hypertension"):
+        protective.append("No high blood pressure reported")
+    if not original_inputs.get("high_cholesterol"):
+        protective.append("No high cholesterol reported")
+    if not protective:
+        protective.append("Review healthy routines with a clinician")
+
+    modifiable = []
+    if original_inputs.get("smoking"):
+        modifiable.append("Smoking")
+    if original_inputs.get("hypertension"):
+        modifiable.append("High blood pressure")
+    if original_inputs.get("high_cholesterol"):
+        modifiable.append("High cholesterol")
+    if not modifiable:
+        modifiable.append("No quick lifestyle factors were flagged")
+
+    with st.container(border=True, key="result_summary"):
+        statement_col, score_col = st.columns([1.4, 0.6], vertical_alignment="center")
+        with statement_col:
+            st.markdown("<div class='role-card-kicker'>Lifestyle screening result</div>", unsafe_allow_html=True)
+            st.markdown(f"<h1 style='margin:.25rem 0 .5rem'>{escape(status)}</h1>", unsafe_allow_html=True)
+            render_status_chip(status, tone=tone)
+            st.markdown(f"<p class='question-help' style='margin-top:14px'>{escape(explanation)}</p>", unsafe_allow_html=True)
+        with score_col:
+            render_animated_score(float(result["risk"]), key="lifestyle_result")
+
+    factors_col, actions_col, next_col = st.columns(3, gap="medium")
+    with factors_col:
+        with st.container(border=True, key="protective_factors"):
+            st.markdown("<div class='role-card-kicker'>Protective factors</div>", unsafe_allow_html=True)
+            for factor in protective:
+                st.write(f"✓ {factor}")
+    with actions_col:
+        with st.container(border=True, key="modifiable_factors"):
+            st.markdown("<div class='role-card-kicker'>Modifiable factors</div>", unsafe_allow_html=True)
+            for factor in modifiable:
+                st.write(f"• {factor}")
+    with next_col:
+        with st.container(border=True, key="next_steps"):
+            st.markdown("<div class='role-card-kicker'>Suggested next step</div>", unsafe_allow_html=True)
+            st.write("Bring this summary to a routine appointment if you have concerns.")
+
+    download_col, discuss_col = st.columns([1, 1])
+    with download_col:
+        st.download_button(
+            "Download summary",
+            data=_lifestyle_summary_text(result, original_inputs, status).encode("utf-8"),
+            file_name="brainguard-lifestyle-summary.txt",
+            mime="text/plain",
+            icon=":material/download:",
+            width="stretch",
+        )
+    with discuss_col:
+        st.link_button(
+            "Discuss with a clinician",
+            "mailto:?subject=Question%20about%20BrainGuard%20AI%20screening",
+            icon=":material/forum:",
+            width="stretch",
+        )
 
 
 def render_lifestyle_gauge_and_recommendation(

@@ -1,14 +1,15 @@
 import pandas as pd
 import plotly.graph_objects as go
 
-# Reuses the same validated status/muted tokens already used across
-# utils/shap_chart.py and views/dashboard.py -- no new palette introduced.
-COLOR_MUTED = "#8B94A3"
-COLOR_HIGH_RISK = "#B33A3A"
-COLOR_LOW_RISK = "#1E7A4C"
-COLOR_WARNING = "#B8892B"
-AXIS_INK = "#13203A"
-GRIDLINE = "#D5DCE3"
+# Literal mirrors of the CSS theme tokens in utils/layout.py (--good,
+# --critical, --moderate, --ink-primary) -- Plotly cannot read CSS variables,
+# so keep these in sync. No new palette introduced.
+COLOR_MUTED = "#7B8790"
+COLOR_HIGH_RISK = "#A63838"
+COLOR_LOW_RISK = "#256C4C"
+COLOR_WARNING = "#8A5A00"
+AXIS_INK = "#102A43"
+GRIDLINE = "#D9DED9"
 
 PATIENT_LABEL_COLORS = {
     "Nondemented": COLOR_LOW_RISK,

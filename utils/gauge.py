@@ -4,8 +4,11 @@ _GREEN = "#E2EFE7"
 _YELLOW = "#F3E9D6"
 _RED = "#F5E1E1"
 _NEUTRAL = "#EDF1F5"
-_INK = "#13203A"
-_BAR = "#1C3D5A"
+# Literal mirrors of the CSS theme tokens in utils/layout.py -- Plotly
+# cannot read CSS variables, so keep these in sync with --ink-primary and
+# --brand-navy.
+_INK = "#102A43"
+_BAR = "#102A43"
 
 
 def _high_risk_midpoint(high_risk_threshold: float) -> float:
@@ -29,6 +32,10 @@ def _finalize(fig: go.Figure) -> go.Figure:
         margin=dict(l=20, r=20, t=50, b=20),
         paper_bgcolor="rgba(0,0,0,0)",
         font=dict(color=_INK),
+        # Plotly applies this transition when Streamlit mounts or updates the
+        # figure. It is deliberately short and respects the app-level reduced
+        # motion controls for nonessential UI effects.
+        transition=dict(duration=500, easing="cubic-in-out"),
     )
     return fig
 

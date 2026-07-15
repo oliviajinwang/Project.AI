@@ -8,43 +8,23 @@ from utils.i18n import t
 from utils.risk_profile import render_shared_risk_profile_fields
 from utils.patient_record import ensure_patient_record, parse_iso_date, save_patient_record_session
 
-AXIS_INK = "#13203A"
-GRIDLINE = "#D5DCE3"
-COLOR_LINE = "#2E6DA4"
+# Chart ink/gridline values mirror the theme tokens in utils/layout.py
+# (Plotly cannot read CSS variables).
+AXIS_INK = "#102A43"
+GRIDLINE = "#D9DED9"
 
 _EHR_CSS = """
 <style>
-.ehr-card {
-    background: white;
-    border: 1px solid #E4DFF0;
-    border-radius: 12px;
-    padding: 1rem 1.1rem;
-    margin-bottom: 0.9rem;
-    box-shadow: 0 2px 8px rgba(75, 63, 114, 0.06);
-}
-.ehr-card h4 {
-    color: #4B3F72;
-    margin: 0 0 0.75rem 0;
-    font-size: 1rem;
-}
+/* Inline record badges, themed with the shared teal accent. */
 .ehr-badge {
     display: inline-block;
-    background: #EEE8F8;
-    color: #4B3F72;
+    background: var(--brand-teal-soft);
+    color: var(--brand-hover);
     border-radius: 999px;
     padding: 0.2rem 0.7rem;
     font-size: 0.8rem;
     font-weight: 600;
     margin-right: 0.35rem;
-}
-.ehr-timeline-item {
-    border-left: 3px solid #6A4C93;
-    padding-left: 0.9rem;
-    margin-bottom: 0.8rem;
-}
-.ehr-metric-label {
-    color: #6B7280;
-    font-size: 0.8rem;
 }
 </style>
 """

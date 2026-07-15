@@ -1,8 +1,10 @@
 import pandas as pd
 import plotly.graph_objects as go
 
-COLOR_INCREASE = "#B33A3A"
-COLOR_DECREASE = "#1E7A4C"
+# Literal mirrors of the CSS theme tokens --critical and --good in
+# utils/layout.py (Plotly cannot read CSS variables).
+COLOR_INCREASE = "#A63838"
+COLOR_DECREASE = "#256C4C"
 
 
 def render_shap_breakdown(importance: pd.DataFrame, top_n: int = 5) -> go.Figure:
@@ -37,7 +39,7 @@ def render_shap_breakdown(importance: pd.DataFrame, top_n: int = 5) -> go.Figure
         margin=dict(l=10, r=80, t=50, b=40),
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
-        font=dict(color="#13203A"),
+        font=dict(color="#102A43"),
         showlegend=False,
         yaxis=dict(automargin=True),
         xaxis=dict(automargin=True),

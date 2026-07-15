@@ -1,152 +1,58 @@
 import streamlit as st
 
+from utils.hero_signal import render_brain_signal_hero
+from utils.ui import icon, render_public_header, render_trust_indicators
+
+
 st.markdown(
     """
     <style>
-    .st-key-hero_section {
-        min-height: 92vh;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        text-align: center;
-    }
-    .st-key-hero_section div[data-testid="stMarkdownContainer"] {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-    }
-    .hero-eyebrow {
-        font-family: var(--font-mono);
-        font-size: 13px;
-        font-weight: 600;
-        letter-spacing: 0.12em;
-        text-transform: uppercase;
-        color: var(--brand-blue);
-        margin-bottom: 20px;
-        text-align: center;
-        width: 100%;
-    }
-    .hero-title {
-        font-family: var(--font-serif);
-        font-size: 88px;
-        font-weight: 500;
-        letter-spacing: -0.01em;
-        color: var(--ink-primary);
-        line-height: 1.05;
-        margin-bottom: 20px;
-        text-align: center;
-        width: 100%;
-    }
-    .hero-subtitle {
-        font-size: 21px;
-        color: var(--ink-secondary);
-        max-width: 640px;
-        text-align: center;
-    }
+    /* ================================================================
+       Landing-page styles. The interactive "Brain Health Signal" hero
+       (canvas point-cloud brain + BRAINGUARD morph) lives in its own
+       component -- see utils/hero_signal.py. Everything below the hero
+       stays conventional modern-healthcare styling.
+       ================================================================ */
 
-    /* At phone widths, 88px wraps "BrainGuard AI" mid-word ("BrainG" /
-       "uard AI") since the word itself is wider than the viewport. */
-    @media (max-width: 480px) {
-        .hero-title { font-size: 48px; }
-        .hero-subtitle { font-size: 17px; }
-        .hero-eyebrow { font-size: 11px; }
+    /* Full-page hero: break the component iframe out of the content column
+       to span the whole viewport width, and size it so header + hero fill
+       the first screen. The overlay below then pulls the tagline + CTA up
+       onto the animation itself. */
+    section.stMain { overflow-x:hidden; }
+    .st-key-hero_block iframe {
+        display:block;
+        width:100vw !important;
+        margin-left:calc(50% - 50vw);
+        height:calc(100vh - 170px) !important;
+        min-height:560px;
     }
+    .st-key-hero_overlay { position:relative; z-index:5; margin-top:-215px; pointer-events:none; }
+    .st-key-hero_overlay .stButton > button { pointer-events:auto; }
 
-    /* Centers the "Continue" button instead of letting it sit flush-left
-       like a normal block-level st.button. st.container() renders as a
-       stVerticalBlock, which Streamlit's own base CSS already sets to
-       flex-direction: column -- so centering its child horizontally needs
-       align-items (the cross-axis), not justify-content (which would
-       center along the vertical main axis instead and do nothing visible
-       here). */
-    .st-key-continue_section {
-        display: flex;
-        align-items: center;
-        width: 100%;
-        margin-top: 32px;
-    }
+    /* Streamlit's own stMarkdownContainer p rule outranks a bare class
+       selector, so match its specificity to keep the auto side margins. */
+    div[data-testid="stMarkdownContainer"] p.hero-message { text-align:center; font-size:clamp(17px,1.7vw,19px); line-height:1.6; color:var(--ink-secondary); max-width:540px; margin:6px auto 0; padding:10px 20px; background:radial-gradient(ellipse closest-side, rgba(252,250,246,0.94) 60%, transparent 100%); }
+    .hero-message strong { color:var(--ink-primary); font-weight:600; }
 
-    /* One-shot entrance animation on page load -- plain document-timeline
-       (no animation-timeline: view()), so it plays once when the section
-       mounts and never re-triggers on scroll. */
-    @keyframes fadeInUp {
-        from { opacity: 0; transform: translateY(18px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-    .st-key-mission_section, .st-key-mission_stat_card,
-    .st-key-vision_card, .st-key-goal_card, .pull-quote {
-        animation: fadeInUp 0.7s ease-out both;
-    }
-    .st-key-mission_stat_card { animation-delay: 0.1s; }
-    .st-key-vision_card { animation-delay: 0.1s; }
-    .st-key-goal_card { animation-delay: 0.22s; }
-    .pull-quote { animation-delay: 0.32s; }
+    /* Faint chrome + cyan glow on the single primary CTA -- the strongest
+       Y2K interactive accent is spent here, not on every button. */
+    .st-key-hero_cta { max-width:320px; margin:24px auto 0; }
+    .st-key-hero_cta .stButton > button { box-shadow:0 0 0 1px var(--y2k-silver), 0 0 22px var(--y2k-cyan-glow), 0 4px 10px rgba(30,87,83,0.18); }
+    .st-key-hero_cta .stButton > button:hover { box-shadow:0 0 0 1px var(--y2k-cyan), 0 0 30px var(--y2k-cyan-glow), 0 4px 10px rgba(30,87,83,0.18); }
 
-    /* Stat callout -- the one hard number we actually have (~40%),
-       presented as its own card rather than buried in a paragraph. */
-    .st-key-mission_stat_card {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        text-align: center;
-        height: 100%;
-        min-height: 200px;
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-    .st-key-mission_stat_card:hover {
-        transform: translateY(-6px);
-        box-shadow: var(--shadow-md);
-    }
-    .stat-number {
-        font-family: var(--font-serif);
-        font-size: 64px;
-        font-weight: 600;
-        color: var(--brand);
-        line-height: 1;
-        margin-bottom: 10px;
-    }
-    .stat-caption {
-        font-size: 14px;
-        color: var(--ink-secondary);
-        line-height: 1.5;
-        max-width: 220px;
-    }
+    /* Thin chrome divider marking the end of the hero section. */
+    .y2k-divider { position:relative; height:1px; margin:34px auto 30px; max-width:200px; background:linear-gradient(90deg, transparent, var(--y2k-silver-dark) 22%, var(--y2k-cyan) 50%, var(--y2k-silver-dark) 78%, transparent); }
+    .y2k-divider::after { content:""; position:absolute; top:50%; left:50%; width:5px; height:5px; background:var(--y2k-cyan); border-radius:50%; transform:translate(-50%,-50%); box-shadow:0 0 6px var(--y2k-cyan-glow); }
 
-    /* Vision / Goal cards -- same card language as the role-select
-       cards (accent-bar + bordered container), with a hover-lift. */
-    .st-key-vision_card, .st-key-goal_card {
-        height: 100%;
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-    .st-key-vision_card:hover, .st-key-goal_card:hover {
-        transform: translateY(-4px);
-        box-shadow: var(--shadow-md);
-    }
+    /* ---- Below-the-fold content: conventional, readable ---- */
+    .bg-mission-grid { display:grid; grid-template-columns:1.6fr .9fr; gap:24px; align-items:start; }
+    .bg-mission-note { border-left:3px solid var(--y2k-silver-dark); padding:18px 20px; background:#F3F8F6; border-radius:0 var(--radius-md) var(--radius-md) 0; color:var(--ink-secondary); font-size:16px; line-height:1.55; clip-path:polygon(0 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%); }
+    .bg-mission-note strong { color:var(--ink-primary); }
+    .landing-audience-icon { display:flex; align-items:center; justify-content:center; width:46px; height:46px; border-radius:14px; background:var(--brand-teal-soft); color:var(--brand); border:1px solid var(--y2k-silver); box-shadow:inset 0 0 0 1px rgba(255,255,255,.5); margin-bottom:16px; }
 
-    /* "The Core Question" as a pull-quote instead of a plain info box. */
-    .pull-quote {
-        position: relative;
-        font-family: var(--font-serif);
-        font-style: italic;
-        font-size: 21px;
-        line-height: 1.55;
-        color: var(--ink-primary);
-        padding: 10px 20px 10px 40px;
-        border-left: 3px solid var(--brand-blue);
-        margin: 12px 0 20px 0;
-    }
-    .pull-quote::before {
-        content: "\\201C";
-        position: absolute;
-        left: 4px;
-        top: -8px;
-        font-size: 56px;
-        font-family: var(--font-serif);
-        color: var(--brand-blue);
-        opacity: 0.35;
-        line-height: 1;
+    @media (max-width: 768px) {
+        .bg-mission-grid { grid-template-columns:1fr; }
+        .st-key-hero_overlay { margin-top:-185px; }
     }
     </style>
     """,
@@ -154,96 +60,63 @@ st.markdown(
 )
 
 
-def _go_to_role_select():
+def _go_to_role_select() -> None:
     st.session_state.show_role_select = True
 
 
-with st.container(key="hero_section"):
-    st.markdown("<div class='hero-eyebrow'>Explainable AI &middot; Dementia Screening</div>", unsafe_allow_html=True)
-    st.markdown("<div class='hero-title'>BrainGuard AI</div>", unsafe_allow_html=True)
-    st.markdown(
-        "<div class='hero-subtitle'>AI-Powered Dementia Risk Assessment &amp; Patient Management System</div>",
-        unsafe_allow_html=True,
-    )
-    with st.container(key="continue_section"):
-        st.button("Continue →", on_click=_go_to_role_select, type="primary")
+render_public_header()
 
-with st.container(key="mission_section"):
-    st.markdown("<div class='bg-section'>Our Mission</div>", unsafe_allow_html=True)
-
-    mcol1, mcol2 = st.columns([3, 2], gap="large")
-    with mcol1:
-        st.write(
-            "BrainGuard AI is an educational and clinical decision-support prototype "
-            "that estimates dementia-related risk from lifestyle, cognitive, and "
-            "structural factors, and explains which factors influenced each estimate. "
-            "It is not a diagnosis, a medical device, or a substitute for professional "
-            "medical evaluation."
+with st.container(key="hero_block"):
+    render_brain_signal_hero()
+    # Overlaid on the hero's lower band via the negative-margin CSS above,
+    # keeping the tagline and CTA inside the first screen.
+    with st.container(key="hero_overlay"):
+        st.markdown(
+            "<p class='hero-message'><strong>Your brain health is shaped by more than "
+            "genetics.</strong><br>Explore factors you may be able to influence.</p>",
+            unsafe_allow_html=True,
+            width="stretch",  # markdown otherwise shrink-wraps, leaving the text off-center
         )
-        st.write(
-            "According to research, about 40% of dementia cases could have been prevented "
-            "or slowed by modifying lifestyle factors, meaning that changes in small, "
-            "everyday habits can meaningfully affect long-term risk. By surfacing "
-            "modifiable, model-associated factors early and explaining them clearly, we "
-            "hope to support more informed conversations between patients and their care "
-            "teams -- though model associations do not prove that changing any one factor "
-            "will change an individual's outcome."
-        )
-    with mcol2:
-        with st.container(border=True, key="mission_stat_card"):
-            st.markdown(
-                "<div class='stat-number'>~40%</div>"
-                "<div class='stat-caption'>of dementia cases could be prevented or slowed "
-                "by modifying lifestyle factors</div>",
-                unsafe_allow_html=True,
+        with st.container(key="hero_cta"):
+            st.button(
+                "Check my risk factors →",
+                on_click=_go_to_role_select,
+                type="primary",
+                width="stretch",
             )
 
-st.markdown("<div class='bg-section'>About BrainGuard AI</div>", unsafe_allow_html=True)
+st.markdown("<div class='y2k-divider' aria-hidden='true'></div>", unsafe_allow_html=True)
 
-vcol1, vcol2 = st.columns(2, gap="large")
-with vcol1:
-    with st.container(border=True, key="vision_card"):
-        st.markdown("<span class='accent-bar accent-bar-blue'></span>", unsafe_allow_html=True)
-        st.subheader("The Vision")
-        st.write(
-            "To democratize brain health data by turning a complex machine learning model "
-            "into an interactive, public-facing dashboard. It serves two audiences: "
-            "individuals looking to understand their modifiable risk factors, and "
-            "clinicians who need an explainable, data-driven tool to back up their patient "
-            "recommendations."
-        )
-with vcol2:
-    with st.container(border=True, key="goal_card"):
-        st.markdown("<span class='accent-bar accent-bar-violet'></span>", unsafe_allow_html=True)
-        st.subheader("The Goal")
-        st.write(
-            "An end-to-end data science application that allows users to input "
-            "health/lifestyle metrics, receive a personalized dementia risk assessment, "
-            "and view an interactive, localized breakdown of why they received that score "
-            "using Explainable AI (XAI)."
-        )
+render_trust_indicators()
 
-st.subheader("The Core Question")
+st.markdown("<div class='bg-section'>What BrainGuard AI is for</div>", unsafe_allow_html=True)
 st.markdown(
-    "<div class='pull-quote'>Can an explainable machine learning model accurately assess "
-    "dementia risk using purely non-invasive, modifiable lifestyle factors, and how can we "
-    "effectively visualize these risk drivers to motivate patient behavior change?</div>",
+    "<div class='bg-mission-grid'><div><p>BrainGuard AI is an educational and clinical "
+    "decision-support prototype that estimates dementia-related risk from lifestyle, "
+    "cognitive, and structural factors. It explains which factors influenced each "
+    "estimate so people and care teams can have more informed conversations.</p>"
+    "<p>It is not a diagnosis, a medical device, or a substitute for professional "
+    "medical evaluation.</p></div>"
+    "<aside class='bg-mission-note'><strong>A supportive starting point</strong><br>"
+    "Results describe patterns in a research-trained model. They do not predict an "
+    "individual's future or replace a clinician's assessment.</aside></div>",
     unsafe_allow_html=True,
 )
 
-st.markdown("---")
+st.markdown("<div class='bg-section'>Designed for people and care teams</div>", unsafe_allow_html=True)
+col1, col2, col3 = st.columns(3, gap="large")
+for col, title, body, symbol in (
+    (col1, "For individuals", "Understand lifestyle factors in straightforward language before your next appointment.", "brain"),
+    (col2, "For families", "Prepare for a supportive conversation and keep questions focused on what matters most.", "family"),
+    (col3, "For clinicians", "Review structured assessments and patient information in one focused workspace.", "clinic"),
+):
+    with col:
+        with st.container(border=True, key=f"landing_{symbol}_card"):
+            st.markdown(f"<div class='landing-audience-icon'>{icon(symbol, size=25)}</div>", unsafe_allow_html=True)
+            st.subheader(title)
+            st.write(body)
 
-st.subheader("Disclaimer")
+st.markdown("<div class='bg-section'>Important information</div>", unsafe_allow_html=True)
 st.warning(
-    "BrainGuard AI is an **educational and clinical decision-support prototype**, "
-    "not a diagnosis, a medical device, or a substitute for professional evaluation.\n\n"
-    "A **Low Risk** result does not rule out dementia, and a **High Risk** result does "
-    "not mean a person has or will develop dementia. The factors the model highlights "
-    "are statistical associations, not proven causes.\n\n"
-    "Always consult a qualified physician about any concerns regarding memory, "
-    "thinking, or daily functioning."
+    "BrainGuard AI is an educational and clinical decision-support prototype. A lower-risk result does not rule out dementia, and a result needing attention does not mean a person has or will develop dementia. Always consult a qualified clinician about concerns with memory, thinking, or daily functioning."
 )
-
-st.markdown("---")
-st.subheader("Contact")
-st.info("support@brainguardai.com\n\nProject developed as part of a data science / AI course")
