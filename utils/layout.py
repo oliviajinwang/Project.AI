@@ -346,7 +346,7 @@ hr {
    hosting environment renders that native toolbar taller than the 60px
    measured locally. */
 .st-key-portal_header {
-    margin-top: 3rem;
+    margin-top: 2.5rem;
     position: static;
 }
 .bg-brand { display:flex; align-items:center; color:var(--brand-navy); font-family:var(--font-serif); font-size:22px; font-weight:600; letter-spacing:-0.01em; }
@@ -423,7 +423,7 @@ hr {
     /* Same native-toolbar clearance as the desktop rule above, recalibrated
        for this breakpoint's smaller block-container padding (the sidebar
        also collapses here, which shifts the layout's own baseline offset). */
-    .st-key-portal_header { margin-top: 4rem; }
+    .st-key-portal_header { margin-top: 3.5rem; }
     .st-key-portal_header [data-testid="stHorizontalBlock"] { gap:.45rem; }
     .bg-current-page { display:none; }
     .bg-header-note { font-size:12px; }
