@@ -1,40 +1,125 @@
-# Project.AI
-GCET Dementia Project
+# 🧠 BrainGuard AI
 
-**[Try BrainGuard AI here](https://brain-guard-ai.streamlit.app/)**
+> An explainable AI-powered dementia risk assessment and clinical decision-support prototype built using machine learning, Streamlit, and XGBoost.
+
+<p align="center">
+
+**🌐 Live Demo:** https://brain-guard-ai.streamlit.app/
+
+</p>
+
+---
 
 # Overview
 
-BrainGuard AI is an educational and clinical decision-support prototype. It uses machine learning models trained on research datasets to estimate dementia-related risk from lifestyle, cognitive, and structural (MRI-derived) factors, and to explain which factors influenced each estimate. It is **not** a diagnosis, a medical device, or a replacement for professional medical evaluation — model associations do not establish causation, and results should always be discussed with a qualified healthcare provider.
+BrainGuard AI is an educational and clinical decision-support prototype that estimates dementia-related risk using machine learning models trained on research datasets. The application combines **lifestyle, cognitive, and structural (MRI-derived)** information to provide explainable risk estimates and personalized recommendations for patients and clinicians.
 
-According to research, about 40% of dementia cases could have been prevented or slowed by modifying lifestyle factors, meaning that changes in small, everyday habits can meaningfully affect long-term risk. BrainGuard AI aims to support that conversation — surfacing modifiable, model-associated factors and personalized, explainable estimates so patients and clinicians can decide next steps together. It does not itself prevent, diagnose, or treat dementia.
+Rather than functioning as a diagnostic tool, BrainGuard AI was designed to demonstrate how explainable artificial intelligence (XAI) can support conversations between patients and healthcare professionals by highlighting which factors contributed most strongly to each prediction.
 
-# Disclaimer
+Research suggests that approximately **40% of dementia cases may be delayed or prevented through modification of lifestyle-related risk factors**. BrainGuard AI aims to encourage those conversations by identifying potentially modifiable factors while clearly communicating the limitations of machine learning in healthcare.
 
-BrainGuard AI is an educational and clinical decision-support prototype, not a diagnosis, a certified medical device, or a substitute for professional medical evaluation. Model outputs are statistical associations learned from limited research datasets, not proof of cause and effect. A **Low Risk** result does not rule out dementia, and a **High Risk** result does not mean a person has or will develop dementia. What-if comparisons illustrate model behavior only — they do not prove that making a given change would cause the displayed reduction for a real person. If you or someone you know has concerns about memory, thinking, or daily functioning, please consult a qualified physician.
+---
+
+# ⚠️ Disclaimer
+
+BrainGuard AI is an educational and clinical decision-support prototype.
+
+It is **not**:
+
+- a diagnosis
+- a certified medical device
+- a replacement for professional medical evaluation
+
+Model predictions represent statistical associations learned from limited research datasets and **do not establish causation**.
+
+- A **Low Risk** result does not rule out dementia.
+- A **High Risk** result does not mean a patient has or will develop dementia.
+- "What-if" comparisons illustrate model behavior only and should not be interpreted as medical advice.
+
+Anyone experiencing memory loss, cognitive decline, or concerns regarding dementia should consult a qualified healthcare professional.
+
+---
 
 # Features
 
-* **Patient Portal** — quick self-service dementia risk check, patient registration, and an AI assistant for questions about results.
-* **Clinic Portal** (clinician login required) — dashboard of registered patients, patient history with CSV batch import, a two-tab (lifestyle + structural/clinical) dementia risk check, SHAP-driven explanations and personalized action plans, and downloadable PDF medical reports.
-* Risk predictions from trained XGBoost models with SHAP explainability, plus transparent validation performance (cross-validated AUC/accuracy) for each model.
+## 👤 Patient Portal
 
-# Authors
+- Quick lifestyle dementia risk assessment
+- Patient registration
+- AI-powered educational assistant
+- Personalized lifestyle recommendations
+- Explainable AI summaries
+- Accessible interface designed for older adults
 
-Olivia Wang, Grade 11 (Class of 2028), International Community School, Redmond, WA -- Project Liason
+---
 
-David Chen, Grade 11 (Class of 2028), Tabor Academy, Marion, MA -- Backend Developer
+## 🩺 Clinician Portal
 
-Emma Liu, Grade 11 (Class of 2028), Shanghai American School Pudong Campus -- Frontend Developer
+- Secure clinician authentication
+- Patient management dashboard
+- Patient history database
+- CSV patient import
+- Lifestyle assessment
+- Structural (MRI-derived) assessment
+- SHAP explainability
+- Personalized action plans
+- Downloadable PDF medical reports
 
-Yuki Mach Grade 11 (class of 2028), Intfernational school in Hawaii, Hauula -- UI/UX
+---
 
-# 📸 Application Screenshots
+## 🤖 Machine Learning
+
+BrainGuard AI currently includes three machine learning pipelines:
+
+| Model | Purpose |
+|--------|---------|
+| Lifestyle Model | Estimates dementia-related risk using modifiable lifestyle factors |
+| Cognitive Model | Estimates dementia-related risk using cognitive assessment data |
+| Clinical Model | Estimates dementia-related risk using structural MRI measurements |
+
+Models are implemented using **XGBoost** and explained using **SHAP (SHapley Additive Explanations)** to provide transparent feature-level reasoning.
+
+---
+
+# Technology Stack
+
+### Machine Learning
+
+- XGBoost
+- Scikit-learn
+- SHAP
+- pandas
+- NumPy
+
+### Frontend
+
+- Streamlit
+- Plotly
+- Matplotlib
+
+### Backend
+
+- Python
+- SQLite
+
+### AI
+
+- OpenAI API
+- Explainable AI (SHAP)
+
+### Reports
+
+- FPDF2
+- QRCode
+
+---
+
+# 📸 Application Preview
 
 ## Welcome Page
 
 <p align="center">
-  <img src="assets/home.png" alt="BrainGuard AI Welcome Page" width="900"/>
+<img src="assets/home.png" width="900">
 </p>
 
 ---
@@ -42,7 +127,7 @@ Yuki Mach Grade 11 (class of 2028), Intfernational school in Hawaii, Hauula -- U
 ## Patient Risk Assessment
 
 <p align="center">
-  <img src="assets/patient-risk.png" alt="Patient Risk Assessment" width="900"/>
+<img src="assets/patient-risk.png" width="900">
 </p>
 
 ---
@@ -50,52 +135,129 @@ Yuki Mach Grade 11 (class of 2028), Intfernational school in Hawaii, Hauula -- U
 ## Clinician Dashboard
 
 <p align="center">
-  <img src="assets/clinician-dashboard.png" alt="Clinician Dashboard" width="900"/>
+<img src="assets/clinician-dashboard.png" width="900">
 </p>
 
+---
 
-# Requirements
+# Repository Structure
 
-* Python 3.12
-* Dependencies listed in [requirements.txt](requirements.txt) (Streamlit, XGBoost, scikit-learn, SHAP, pandas, plotly, matplotlib, fpdf2, qrcode, openai)
-* An OpenAI API key if you want the AI Assistant / chatbot features to work — the rest of the app runs fine without one.
+```text
+app.py                  # Application entry point
+views/                  # Streamlit pages
+utils/                  # Shared utilities
+src/                    # Machine learning pipelines
+models/                 # Saved models and SHAP explainers
+data/                   # Sample datasets
+tests/                  # Automated tests
+assets/                 # README screenshots
+.streamlit/             # Streamlit configuration
+```
 
-# Quick Start
+---
+
+# Installation
+
+## Requirements
+
+- Python 3.12+
+- Dependencies listed in `requirements.txt`
+
+Optional:
+
+- OpenAI API Key for chatbot functionality
+
+---
+
+## Quick Start
 
 ```bash
-# 1. Install dependencies
+# Install dependencies
 pip install -r requirements.txt
 
-# 2. (Optional) enable the AI assistant by setting an OpenAI API key
-#    either as an environment variable...
+# (Optional) Enable the AI assistant
 export OPENAI_API_KEY=sk-...
-#    ...or in .streamlit/secrets.toml
+
+# or
+
 echo 'OPENAI_API_KEY = "sk-..."' > .streamlit/secrets.toml
 
-# 3. Run the app
+# Launch the application
 streamlit run app.py
 ```
 
-The app opens at `http://localhost:8501`. `database.db` (SQLite) is created automatically on first run. From the welcome screen, choose **Patient** or **Clinic** — clinicians register their own account on first login, there are no seeded demo credentials.
+The application will be available at:
 
-To run the test suite:
+```
+http://localhost:8501
+```
+
+The SQLite database (`database.db`) is created automatically on first launch.
+
+Clinicians register their own accounts—no demo credentials are included.
+
+---
+
+# Running Tests
 
 ```bash
 pytest tests/ -v
 ```
 
-# File Structure
+The automated test suite validates:
 
-```
-app.py                  # entry point: role routing, session state, navigation
-views/                  # one file per page (patient portal, clinic portal, login, etc.)
-utils/                  # shared logic: db access, auth, PDF reports, charts, chatbot
-src/                    # data cleaning and prediction pipelines for the ML models
-models/                 # trained model artifacts (.pkl), SHAP explainers, metrics
-data/                   # sample/reference datasets for patient and clinician views
-tests/                  # pytest suite (auth, predictions, chatbot)
-.streamlit/config.toml  # theme configuration
-```
+- authentication
+- machine learning predictions
+- chatbot functionality
+- report generation
+- database operations
+- application utilities
 
-# Notes
+---
 
+# Current Limitations
+
+BrainGuard AI is intended for educational and research purposes.
+
+Current limitations include:
+
+- Models are trained on publicly available research datasets.
+- External validation on an independent clinical cohort has not yet been completed.
+- Predictions should not be interpreted as clinical diagnoses.
+- Performance may vary across populations that differ from the training data.
+- The application complements—rather than replaces—clinical judgment.
+
+---
+
+# Future Work
+
+Planned improvements include:
+
+- External clinical validation
+- Additional MRI datasets
+- Improved probability calibration
+- Longitudinal patient tracking
+- Expanded clinician analytics
+- Enhanced explainability visualizations
+- Broader accessibility support
+
+---
+
+# Authors
+
+| Name | Role |
+|------|------|
+| **Olivia Wang** (International Community School) | Project Lead & Machine Learning |
+| **David Chen** (Tabor Academy) | Backend Development |
+| **Emma Liu** (Shanghai American School) | Frontend Development |
+| **Yuki Mach** (International School in Hawaii) | UI/UX Design |
+
+---
+
+# Acknowledgments
+
+We thank the creators of the open-source datasets and software libraries that made this educational project possible, including the developers of Streamlit, XGBoost, SHAP, scikit-learn, and the research datasets used throughout the project.
+
+---
+
+**BrainGuard AI is intended solely for educational and research purposes and should not be used as a substitute for professional medical advice or diagnosis.**
