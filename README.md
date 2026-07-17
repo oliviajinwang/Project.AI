@@ -1,10 +1,10 @@
-# 🧠 BrainGuard AI
+# BrainGuard AI
 
 > An explainable AI-powered dementia risk assessment and clinical decision-support prototype built using machine learning, Streamlit, and XGBoost.
 
 <p align="center">
 
-**🌐 Live Demo:** https://brain-guard-ai.streamlit.app/
+**Live Demo:** https://brain-guard-ai.streamlit.app/
 
 </p>
 
@@ -20,7 +20,7 @@ Research suggests that approximately **40% of dementia cases may be delayed or p
 
 ---
 
-# ⚠️ Disclaimer
+# Disclaimer
 
 BrainGuard AI is an educational and clinical decision-support prototype.
 
@@ -42,7 +42,7 @@ Anyone experiencing memory loss, cognitive decline, or concerns regarding dement
 
 # Features
 
-## 👤 Patient Portal
+## Patient Portal
 
 - Quick lifestyle dementia risk assessment
 - Patient registration
@@ -53,7 +53,7 @@ Anyone experiencing memory loss, cognitive decline, or concerns regarding dement
 
 ---
 
-## 🩺 Clinician Portal
+## Clinician Portal
 
 - Secure clinician authentication
 - Patient management dashboard
@@ -67,7 +67,7 @@ Anyone experiencing memory loss, cognitive decline, or concerns regarding dement
 
 ---
 
-## 🤖 Machine Learning
+## Machine Learning
 
 BrainGuard AI currently includes three machine learning pipelines:
 
