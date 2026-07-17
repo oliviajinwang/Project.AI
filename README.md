@@ -81,6 +81,21 @@ Models are implemented using **XGBoost** and explained using **SHAP (SHapley Add
 
 ---
 
+# Model Performance
+
+# Model Performance
+
+BrainGuard AI uses separate models for lifestyle-based screening and clinician-facing assessment. The results below come from held-out evaluation data and should not be interpreted as clinical performance.
+
+| Model | Assessment | Test Samples | Positive Samples | Accuracy | Precision | Recall | F1 Score | ROC-AUC | Decision Threshold |
+|---|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| XGBoost | Lifestyle | 360 | 16 | 73.9% | 11.8% | 75.0% | 20.3% | 0.788 | 5.01% |
+| XGBoost | Clinical | 76* | 37* | 75.0% | 76.5% | 70.3% | 73.2% | 0.854 | 50.0% |
+
+\*The clinical sample counts should be included only if the production XGBoost model was evaluated using the same 76-row test set shown for the clinical comparison models.
+
+The lifestyle model uses a low decision threshold to prioritize identifying more potentially at-risk cases. This increases recall but also produces many false-positive results. Therefore, the lifestyle assessment is presented as a preliminary screening estimate rather than a diagnosis.
+
 # Technology Stack
 
 ### Machine Learning
